@@ -16,6 +16,38 @@ import {
 import { runSyncNow } from "../services/connectors/sync.js";
 import { logAction } from "../services/audit.js";
 
+// Map common Postgres connection failures to a plain-English hint so the
+// modal can show "wrong password" instead of just "password authentication
+// failed for user 'teammem_readonly'". The detail is still returned for
+// users who want the raw driver message.
+function describeConnectionFailure(e: unknown, detail: string): string | null {
+  const code = (e as { code?: string }).code;
+  const msg = detail.toLowerCase();
+
+  if (code === "28P01" || msg.includes("password authentication failed")) {
+    return "Wrong password. Double-check the password you used in CREATE ROLE — it's case-sensitive.";
+  }
+  if (code === "3D000" || msg.includes("does not exist")) {
+    return "Database name in the connection string doesn't exist. On Supabase / Neon / RDS the default DB is named `postgres`.";
+  }
+  if (code === "ENOTFOUND" || msg.includes("could not translate host name") || msg.includes("getaddrinfo")) {
+    return "Hostname not resolvable. Copy the connection string from your provider exactly — for Supabase, use the Session pooler URL.";
+  }
+  if (code === "ECONNREFUSED" || msg.includes("connection refused")) {
+    return "Port is closed or wrong. Supabase's Session pooler uses port 6543, not 5432.";
+  }
+  if (code === "ETIMEDOUT" || msg.includes("timeout")) {
+    return "Connection timed out. Your DB may have an IP allowlist that doesn't include Vercel's egress IPs — switch to Supabase's pooler endpoint, or allow 0.0.0.0/0 for testing.";
+  }
+  if (msg.includes("ssl") || msg.includes("tls")) {
+    return "SSL handshake failed. Append `?sslmode=require` to the connection string.";
+  }
+  if (code === "28000" || msg.includes("no pg_hba.conf entry")) {
+    return "Server rejected the connection (pg_hba.conf). The role may not have permission to connect from this network, or SSL is required — try appending `?sslmode=require`.";
+  }
+  return null;
+}
+
 export const dataSourceRoutes = new Hono<AppEnv>();
 
 dataSourceRoutes.use("*", authMiddleware);
@@ -86,10 +118,13 @@ dataSourceRoutes.post("/", async (c) => {
         400
       );
     }
+    const detail = e instanceof Error ? e.message : String(e);
+    const hint = describeConnectionFailure(e, detail);
     return c.json(
       {
         error: "Connection test failed",
-        detail: e instanceof Error ? e.message : String(e),
+        detail,
+        hint,
       },
       400
     );

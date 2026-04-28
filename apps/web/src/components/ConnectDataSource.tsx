@@ -83,11 +83,66 @@ export function ConnectDataSource({
       onConnected(data.data_source);
     } catch (err: any) {
       // apiFetch puts structured error JSON on err.body when present.
-      const body = err.body as Partial<PrivilegeError> | undefined;
-      if (body?.code === "connector_privilege_too_high" && body.privileges) {
-        setPrivilegeError(body as PrivilegeError);
+      const body = err.body as Record<string, unknown> | undefined;
+
+      // Privilege errors get the structured panel (lists which privileges
+      // tripped the check + shows the role-creation SQL).
+      if (
+        body?.code === "connector_privilege_too_high" &&
+        body.privileges
+      ) {
+        setPrivilegeError(body as unknown as PrivilegeError);
       } else {
-        setError(err.message || "Failed to connect");
+        // Anything else: surface the most specific message we have.
+        // The API returns either { error, detail } from a connection test
+        // failure (detail = the actual driver error: bad password, host
+        // not found, SSL refused, etc.) or { error: <zod flatten> } when
+        // validation fails. Both are far more useful than the top-level
+        // string alone, but apiFetch's err.message only carries the short
+        // string. Pull the rest out here.
+        const top =
+          typeof body?.error === "string"
+            ? body.error
+            : err.message || "Failed to connect";
+        const detail =
+          typeof body?.detail === "string" ? body.detail : null;
+
+        // Zod validation errors arrive as { error: { fieldErrors, formErrors } }
+        const zodFlatten = body?.error as
+          | { fieldErrors?: Record<string, string[]>; formErrors?: string[] }
+          | undefined;
+        const zodLines: string[] = [];
+        if (zodFlatten && typeof zodFlatten === "object") {
+          if (Array.isArray(zodFlatten.formErrors)) {
+            zodLines.push(...zodFlatten.formErrors);
+          }
+          if (zodFlatten.fieldErrors) {
+            for (const [field, msgs] of Object.entries(
+              zodFlatten.fieldErrors
+            )) {
+              if (Array.isArray(msgs)) {
+                msgs.forEach((m) => zodLines.push(`${field}: ${m}`));
+              }
+            }
+          }
+        }
+
+        const hint =
+          typeof body?.hint === "string" ? body.hint : null;
+
+        // Prefer hint > detail > top-level error. Hint is the
+        // human-actionable mapping we generate server-side from common
+        // pg error codes; detail is the raw driver message; top is the
+        // generic "Connection test failed" string.
+        const message =
+          zodLines.length > 0
+            ? `Invalid input — ${zodLines.join("; ")}`
+            : hint
+              ? `${hint}\n\n${detail ?? top}`
+              : detail
+                ? `${top} — ${detail}`
+                : top;
+        setError(message);
       }
     } finally {
       setSubmitting(false);
@@ -123,7 +178,7 @@ export function ConnectDataSource({
           className="p-5 overflow-y-auto"
         >
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm whitespace-pre-line leading-relaxed">
               {error}
             </div>
           )}
