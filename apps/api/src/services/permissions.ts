@@ -1,4 +1,4 @@
-import type { AgentPermissions } from "@teammem/shared";
+import type { AgentPermissions } from "../shared/index.js";
 import { query } from "../db/client.js";
 
 type Action = "read" | "write" | "delete";

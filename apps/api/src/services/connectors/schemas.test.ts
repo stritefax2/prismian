@@ -4,7 +4,7 @@ import {
   createDataSourceSchema,
   createCollectionSchema,
   aggregateSchema,
-} from "@teammem/shared";
+} from "../../shared/index.js";
 
 describe("sourceConfigSchema", () => {
   it("accepts a valid schema-qualified table", () => {

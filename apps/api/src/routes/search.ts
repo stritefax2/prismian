@@ -6,7 +6,7 @@ import {
   searchSchema,
   structuredQuerySchema,
   aggregateSchema,
-} from "@teammem/shared";
+} from "../shared/index.js";
 import type { AppEnv } from "../types.js";
 import { generateEmbedding } from "../services/embeddings.js";
 import {
@@ -16,7 +16,7 @@ import {
   getAccessibleCollectionIds,
   filterDeniedFields,
 } from "../services/permissions.js";
-import type { AgentPermissions } from "@teammem/shared";
+import type { AgentPermissions } from "../shared/index.js";
 
 export const searchRoutes = new Hono<AppEnv>();
 

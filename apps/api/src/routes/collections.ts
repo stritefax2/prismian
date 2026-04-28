@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { query } from "../db/client.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
-import { createCollectionSchema } from "@teammem/shared";
-import type { AgentPermissions } from "@teammem/shared";
+import { createCollectionSchema } from "../shared/index.js";
+import type { AgentPermissions } from "../shared/index.js";
 import type { AppEnv } from "../types.js";
 import { runSyncNow } from "../services/connectors/sync.js";
 import {

@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "node:http";
 import jwt from "jsonwebtoken";
-import type { ChangeEvent } from "@teammem/shared";
+import type { ChangeEvent } from "../shared/index.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-to-a-random-secret";
 

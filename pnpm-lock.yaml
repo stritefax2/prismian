@@ -20,9 +20,6 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.103.0
         version: 2.103.0
-      '@teammem/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1

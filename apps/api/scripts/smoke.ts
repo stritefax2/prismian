@@ -27,7 +27,7 @@ import { query, transaction, pool } from "../src/db/client.js";
 import { encryptConfig } from "../src/services/connectors/crypto.js";
 import { runSyncNow } from "../src/services/connectors/sync.js";
 import { filterDeniedFields } from "../src/services/permissions.js";
-import type { AgentPermissions } from "@teammem/shared";
+import type { AgentPermissions } from "../src/shared/index.js";
 
 const SOURCE_TABLE = "smoke_source_customers";
 const TEST_USER_EMAIL = `smoke-${Date.now()}@example.com`;
