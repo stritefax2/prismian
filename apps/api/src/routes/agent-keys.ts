@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { query } from "../db/client.js";
 import { authMiddleware, hashApiKey, generateApiKey } from "../middleware/auth.js";
 import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
-import { createAgentKeySchema } from "@rhona/shared";
+import { createAgentKeySchema } from "@teammem/shared";
 import type { AppEnv } from "../types.js";
 
 export const agentKeyRoutes = new Hono<AppEnv>();

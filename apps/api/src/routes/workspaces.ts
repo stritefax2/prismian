@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { query, transaction } from "../db/client.js";
 import { authMiddleware, requireWorkspaceMember } from "../middleware/auth.js";
-import { createWorkspaceSchema, inviteMemberSchema } from "@rhona/shared";
+import { createWorkspaceSchema, inviteMemberSchema } from "@teammem/shared";
 import { supabaseAdmin } from "../lib/supabase.js";
 import type { AppEnv } from "../types.js";
 

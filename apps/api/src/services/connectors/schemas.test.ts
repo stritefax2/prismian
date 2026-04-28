@@ -4,7 +4,7 @@ import {
   createDataSourceSchema,
   createCollectionSchema,
   aggregateSchema,
-} from "@rhona/shared";
+} from "@teammem/shared";
 
 describe("sourceConfigSchema", () => {
   it("accepts a valid schema-qualified table", () => {

@@ -88,17 +88,17 @@ function buildMcpConfig(
   apiUrl: string
 ): string {
   const envBlock: string[] = [
-    `        "RHONA_API_KEY": "${apiKey}"`,
-    `        "RHONA_WORKSPACE": "${workspaceId}"`,
+    `        "TEAMMEM_API_KEY": "${apiKey}"`,
+    `        "TEAMMEM_WORKSPACE": "${workspaceId}"`,
   ];
   if (apiUrl && !apiUrl.includes("localhost")) {
-    envBlock.push(`        "RHONA_API_URL": "${apiUrl}"`);
+    envBlock.push(`        "TEAMMEM_API_URL": "${apiUrl}"`);
   }
   return `{
   "mcpServers": {
-    "rhona": {
+    "teammem": {
       "command": "npx",
-      "args": ["-y", "rhona-mcp"],
+      "args": ["-y", "teammem-mcp"],
       "env": {
 ${envBlock.join(",\n")}
       }
@@ -234,7 +234,7 @@ export function AcceptInvitePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Rhona</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">TeamMem</h1>
           <p className="text-sm text-gray-500 mb-6">
             You've been invited to a shared workspace. Sign in or create an
             account to join.
@@ -272,7 +272,7 @@ export function AcceptInvitePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-3">Rhona</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">TeamMem</h1>
           <p className="text-sm text-red-600 mb-4">{error}</p>
           <Link
             to="/dashboard"
@@ -543,7 +543,7 @@ export function AcceptInvitePage() {
                       </li>
                       <li>Paste the config above and save</li>
                       <li>
-                        Cursor → Settings → MCP → verify "rhona" is
+                        Cursor → Settings → MCP → verify "teammem" is
                         connected
                       </li>
                     </ol>
@@ -556,17 +556,17 @@ export function AcceptInvitePage() {
                       </p>
                       <div className="space-y-0.5 font-mono text-[11px]">
                         <div>
-                          <span className="text-gray-500">RHONA_API_KEY=</span>
+                          <span className="text-gray-500">TEAMMEM_API_KEY=</span>
                           <span className="text-green-700">{rawKey}</span>
                         </div>
                         <div>
                           <span className="text-gray-500">
-                            RHONA_WORKSPACE=
+                            TEAMMEM_WORKSPACE=
                           </span>
                           <span className="text-blue-700">{workspaceId}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">RHONA_API_URL=</span>
+                          <span className="text-gray-500">TEAMMEM_API_URL=</span>
                           <span className="text-gray-700">{apiUrl}</span>
                         </div>
                       </div>

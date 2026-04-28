@@ -665,12 +665,12 @@ export function SettingsPage() {
                       </ol>
                       <pre className="text-xs text-gray-800 bg-gray-50 rounded-lg p-3 overflow-x-auto">{`{
   "mcpServers": {
-    "rhona": {
+    "teammem": {
       "command": "npx",
-      "args": ["-y", "rhona-mcp"],
+      "args": ["-y", "teammem-mcp"],
       "env": {
-        "RHONA_API_KEY": "${newRawKey}",
-        "RHONA_WORKSPACE": "${id}"
+        "TEAMMEM_API_KEY": "${newRawKey}",
+        "TEAMMEM_WORKSPACE": "${id}"
       }
     }
   }
@@ -696,17 +696,17 @@ export function SettingsPage() {
                         <li>2. Paste the config below and save</li>
                         <li>
                           3. Open Cursor Settings &rarr; MCP &rarr; verify
-                          "rhona" shows as connected
+                          "teammem" shows as connected
                         </li>
                       </ol>
                       <pre className="text-xs text-gray-800 bg-gray-50 rounded-lg p-3 overflow-x-auto">{`{
   "mcpServers": {
-    "rhona": {
+    "teammem": {
       "command": "npx",
-      "args": ["-y", "rhona-mcp"],
+      "args": ["-y", "teammem-mcp"],
       "env": {
-        "RHONA_API_KEY": "${newRawKey}",
-        "RHONA_WORKSPACE": "${id}"
+        "TEAMMEM_API_KEY": "${newRawKey}",
+        "TEAMMEM_WORKSPACE": "${id}"
       }
     }
   }
@@ -727,15 +727,15 @@ export function SettingsPage() {
                       </p>
                       <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-xs font-mono">
                         <div>
-                          <span className="text-gray-500">RHONA_API_KEY=</span>
+                          <span className="text-gray-500">TEAMMEM_API_KEY=</span>
                           <span className="text-green-700">{newRawKey}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">RHONA_WORKSPACE=</span>
+                          <span className="text-gray-500">TEAMMEM_WORKSPACE=</span>
                           <span className="text-blue-700">{id}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">RHONA_API_URL=</span>
+                          <span className="text-gray-500">TEAMMEM_API_URL=</span>
                           <span className="text-gray-700">
                             {window.location.origin.includes("localhost")
                               ? "http://localhost:3001"

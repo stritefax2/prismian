@@ -1,4 +1,4 @@
--- Connected data sources: external databases Rhona mirrors read-only
+-- Connected data sources: external databases TeamMem mirrors read-only
 -- Agents never write to these. Connected collections reject all writes at API layer.
 
 CREATE TABLE data_sources (

@@ -1,4 +1,4 @@
-# Rhona
+# TeamMem
 
 Persistent, permissioned knowledge base for teams and their AI tools.
 
@@ -76,7 +76,7 @@ GET    /api/v1/audit/:workspaceId
 
 7 tools: `search`, `read_entry`, `write_entry`, `update_entry`, `list_collections`, `query_structured`, `workspace_info`
 
-Transports: stdio (local `npx rhona-mcp`) and SSE (remote HTTP)
+Transports: stdio (local `npx teammem-mcp`) and SSE (remote HTTP)
 
 ## Testing
 
@@ -99,4 +99,4 @@ pnpm run test:api     # integration tests (needs Postgres)
 
 ### API: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `OPENAI_API_KEY` (optional)
 ### Web: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
-### MCP: `RHONA_API_KEY`, `RHONA_WORKSPACE`, `RHONA_API_URL`
+### MCP: `TEAMMEM_API_KEY`, `TEAMMEM_WORKSPACE`, `TEAMMEM_API_URL`

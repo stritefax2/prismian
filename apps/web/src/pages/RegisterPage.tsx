@@ -60,7 +60,7 @@ export function RegisterPage() {
       <header className="border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-gray-900">
-            Rhona
+            TeamMem
           </Link>
           <Link
             to="/login"

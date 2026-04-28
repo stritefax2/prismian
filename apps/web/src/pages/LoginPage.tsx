@@ -32,7 +32,7 @@ export function LoginPage() {
       <header className="border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-gray-900">
-            Rhona
+            TeamMem
           </Link>
           <Link
             to="/register"
@@ -48,7 +48,7 @@ export function LoginPage() {
             Welcome back
           </h1>
           <p className="text-sm text-gray-500 mb-6">
-            Sign in to your Rhona account
+            Sign in to your TeamMem account
           </p>
 
           <SocialAuth />

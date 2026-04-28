@@ -68,7 +68,7 @@ export function AppShell({
               to="/dashboard"
               className="font-bold text-gray-900 hover:text-blue-600 transition-colors"
             >
-              Rhona
+              TeamMem
             </Link>
             {breadcrumbs?.map((crumb, i) => (
               <span key={i} className="flex items-center gap-2">

@@ -2,7 +2,7 @@ import { query, transaction } from "../../db/client.js";
 import { decryptConfig } from "./crypto.js";
 import { readRows } from "./postgres.js";
 import { enqueueEmbedding } from "../embeddings.js";
-import type { SourceConfig } from "@rhona/shared";
+import type { SourceConfig } from "@teammem/shared";
 
 const SYNC_INTERVAL_MS = Number(process.env.SYNC_INTERVAL_MS) || 15 * 60 * 1000;
 const SYNC_STALE_MS = SYNC_INTERVAL_MS;

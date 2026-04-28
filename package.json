@@ -1,5 +1,5 @@
 {
-  "name": "rhona",
+  "name": "teammem",
   "version": "0.1.0",
   "private": true,
   "description": "Persistent, permissioned knowledge base for teams and their AI tools",
@@ -9,7 +9,7 @@
     "test": "turbo run test",
     "test:api": "turbo run test:api",
     "lint": "turbo run lint",
-    "db:migrate": "turbo run db:migrate --filter=@rhona/api"
+    "db:migrate": "turbo run db:migrate --filter=@teammem/api"
   },
   "keywords": [
     "knowledge-base",

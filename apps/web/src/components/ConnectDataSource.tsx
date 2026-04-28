@@ -22,12 +22,12 @@ interface PrivilegeError {
   };
 }
 
-const ROLE_SQL = `CREATE ROLE rhona_readonly WITH LOGIN PASSWORD 'change-me';
-GRANT CONNECT ON DATABASE your_db TO rhona_readonly;
-GRANT USAGE ON SCHEMA public TO rhona_readonly;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO rhona_readonly;
+const ROLE_SQL = `CREATE ROLE teammem_readonly WITH LOGIN PASSWORD 'change-me';
+GRANT CONNECT ON DATABASE your_db TO teammem_readonly;
+GRANT USAGE ON SCHEMA public TO teammem_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO teammem_readonly;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT ON TABLES TO rhona_readonly;`;
+  GRANT SELECT ON TABLES TO teammem_readonly;`;
 
 export function ConnectDataSource({
   workspaceId,
@@ -116,7 +116,7 @@ export function ConnectDataSource({
                 That role has too many privileges.
               </p>
               <p className="text-xs text-amber-800 mt-1">
-                Rhona refuses to connect as a superuser or a role that can
+                TeamMem refuses to connect as a superuser or a role that can
                 create accounts or bypass RLS. Provision a dedicated
                 read-only role (SQL below) and use its credentials instead.
               </p>
@@ -156,7 +156,7 @@ export function ConnectDataSource({
                 </p>
                 <p className="text-xs text-blue-800 mt-0.5">
                   Run this in your DB and use the new user's credentials
-                  below. Rhona will refuse superuser / CREATEROLE /
+                  below. TeamMem will refuse superuser / CREATEROLE /
                   CREATEDB / BYPASSRLS roles.
                 </p>
               </div>
@@ -199,7 +199,7 @@ export function ConnectDataSource({
               onChange={(e) => setConnectionString(e.target.value)}
               required
               rows={3}
-              placeholder="postgres://rhona_readonly:password@db.example.com:5432/prod?sslmode=require"
+              placeholder="postgres://teammem_readonly:password@db.example.com:5432/prod?sslmode=require"
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y"
             />
             <span className="block mt-1 text-xs text-gray-500">
@@ -233,7 +233,7 @@ export function ConnectDataSource({
                   <li>
                     Swap in the password for the{" "}
                     <code className="bg-white px-1 rounded">
-                      rhona_readonly
+                      teammem_readonly
                     </code>{" "}
                     role you created above
                   </li>

@@ -7,7 +7,7 @@ import http from "node:http";
 
 function createServer(): McpServer {
   const server = new McpServer({
-    name: "rhona",
+    name: "teammem",
     version: "0.1.0",
   });
 
@@ -156,7 +156,7 @@ function createServer(): McpServer {
 }
 
 const PORT = Number(process.env.PORT) || 3002;
-const EXPECTED_API_KEY = process.env.RHONA_API_KEY || "";
+const EXPECTED_API_KEY = process.env.TEAMMEM_API_KEY || "";
 
 const transports = new Map<string, SSEServerTransport>();
 
@@ -234,5 +234,5 @@ const httpServer = http.createServer(async (req, res) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`Rhona MCP SSE server running on http://localhost:${PORT}`);
+  console.log(`TeamMem MCP SSE server running on http://localhost:${PORT}`);
 });

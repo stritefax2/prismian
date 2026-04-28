@@ -8,7 +8,7 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <span className="text-xl font-bold text-gray-900 tracking-tight">
-              Rhona
+              TeamMem
             </span>
             <nav className="hidden sm:flex items-center gap-6 text-sm text-gray-600">
               <a href="#problem" className="hover:text-gray-900 transition-colors">Why</a>
@@ -132,7 +132,7 @@ export function LandingPage() {
                 </div>
                 <div className="flex-1 text-center">
                   <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-md">
-                    app.rhona.dev
+                    app.teammem.dev
                   </span>
                 </div>
               </div>
@@ -259,7 +259,7 @@ export function LandingPage() {
                   &times;
                 </span>
                 <span className="text-sm font-semibold text-red-600">
-                  Without Rhona
+                  Without TeamMem
                 </span>
               </div>
               <ul className="space-y-3 text-sm text-gray-600">
@@ -289,14 +289,14 @@ export function LandingPage() {
                   &check;
                 </span>
                 <span className="text-sm font-semibold text-green-600">
-                  With Rhona
+                  With TeamMem
                 </span>
               </div>
               <ul className="space-y-3 text-sm text-gray-600">
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5 shrink-0">+</span>
                   Connect Postgres once — every agent on the team reads through
-                  Rhona
+                  TeamMem
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5 shrink-0">+</span>
@@ -354,7 +354,7 @@ export function LandingPage() {
                 <span className="ml-3 text-xs text-gray-500">
                   Claude · connected to{" "}
                   <span className="text-blue-600 font-medium">
-                    rhona (acme-corp)
+                    teammem (acme-corp)
                   </span>
                 </span>
               </div>
@@ -521,7 +521,7 @@ export function LandingPage() {
 
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-2xl p-5 shadow-lg">
                 <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">
-                  Without Rhona
+                  Without TeamMem
                 </p>
                 <p className="text-sm text-gray-300 leading-relaxed">
                   "Let me export a CSV from the admin panel, paste the first
@@ -561,7 +561,7 @@ export function LandingPage() {
                   Connect your database
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Paste a read-only Postgres connection string. Rhona
+                  Paste a read-only Postgres connection string. TeamMem
                   introspects the schema, you pick which tables to expose, and
                   pick which columns each table should share. Everything else
                   stays invisible. Initial sync runs in seconds.
@@ -620,14 +620,14 @@ export function LandingPage() {
                 <pre className="text-sm text-gray-300 overflow-x-auto leading-relaxed">
 {`{
   "mcpServers": {
-    "rhona": {
+    "teammem": {
       "command": "npx",
-      "args": ["-y", "rhona-mcp"],
+      "args": ["-y", "teammem-mcp"],
       "env": {`}
                   <span className="text-green-400">{`
-        "RHONA_API_KEY": "tm_sk_a1b2..."`}</span>{`,`}
+        "TEAMMEM_API_KEY": "tm_sk_a1b2..."`}</span>{`,`}
                   <span className="text-blue-400">{`
-        "RHONA_WORKSPACE": "ws_x9y8..."`}</span>
+        "TEAMMEM_WORKSPACE": "ws_x9y8..."`}</span>
 {`
       }
     }
@@ -692,7 +692,7 @@ export function LandingPage() {
                       "which customers churned this quarter?"
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      2:00 PM — queries <code>customers</code> via Rhona
+                      2:00 PM — queries <code>customers</code> via TeamMem
                     </p>
                   </div>
                 </div>
@@ -847,14 +847,14 @@ export function LandingPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-gray-400 max-w-2xl mx-auto">
-            As more vendors ship their own MCP servers, Rhona wraps them
+            As more vendors ship their own MCP servers, TeamMem wraps them
             with your team's identity, scope, and audit layer — so you get
             a new source without waiting for us to build a connector.
           </p>
         </div>
       </section>
 
-      {/* ─── Inside Rhona: the synced view ─── */}
+      {/* ─── Inside TeamMem: the synced view ─── */}
       <section className="py-20 sm:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
@@ -1187,7 +1187,7 @@ export function LandingPage() {
               },
               {
                 q: "Just use a Postgres MCP server?",
-                a: "You could — and they exist. But they're single-user, no-auth, no-redaction, no-audit. Rhona is what you get when you wrap one in identity, scoped keys, field-level ACLs, and a team UI. Also: native collections for agent-generated knowledge. Plain MCP servers can't do that.",
+                a: "You could — and they exist. But they're single-user, no-auth, no-redaction, no-audit. TeamMem is what you get when you wrap one in identity, scoped keys, field-level ACLs, and a team UI. Also: native collections for agent-generated knowledge. Plain MCP servers can't do that.",
               },
               {
                 q: "Notion / Confluence?",
@@ -1195,7 +1195,7 @@ export function LandingPage() {
               },
               {
                 q: "Build our own with Postgres + pgvector?",
-                a: "You could — and many teams do, for about two weeks, until they hit agent keys, field-level ACLs, audit trail, sync state, optimistic locking, and encryption-at-rest. Rhona is what you'd build. We built it so you don't have to.",
+                a: "You could — and many teams do, for about two weeks, until they hit agent keys, field-level ACLs, audit trail, sync state, optimistic locking, and encryption-at-rest. TeamMem is what you'd build. We built it so you don't have to.",
               },
             ].map((item) => (
               <div
@@ -1367,7 +1367,7 @@ export function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <span className="text-lg font-bold text-white">Rhona</span>
+              <span className="text-lg font-bold text-white">TeamMem</span>
               <p className="text-xs text-gray-500 mt-1">
                 AI-safe access layer for your team's data.
               </p>
@@ -1380,7 +1380,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-gray-800 text-xs text-gray-600 text-center">
-            &copy; {new Date().getFullYear()} Rhona. Built with Postgres,
+            &copy; {new Date().getFullYear()} TeamMem. Built with Postgres,
             pgvector, and the MCP protocol.
           </div>
         </div>

@@ -27,8 +27,8 @@ app.onError(errorHandler);
 app.use("*", logger());
 
 // CORS allowlist. In production set ALLOWED_ORIGINS to a comma-separated
-// list of origins that may call the API (e.g. https://app.rhona.dev,
-// https://staging.rhona.dev). In development, localhost is always
+// list of origins that may call the API (e.g. https://app.teammem.dev,
+// https://staging.teammem.dev). In development, localhost is always
 // allowed. Missing origin (server-to-server, curl) is allowed — auth
 // middleware handles the actual authorization.
 const allowedFromEnv = (process.env.ALLOWED_ORIGINS || "")
@@ -93,7 +93,7 @@ app.notFound((c) => c.json({ error: "Not found" }, 404));
 if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   const port = Number(process.env.PORT) || 3001;
   serve({ fetch: app.fetch, port }, (info) => {
-    console.log(`Rhona API running on http://localhost:${info.port}`);
+    console.log(`TeamMem API running on http://localhost:${info.port}`);
   });
 
   if (process.env.OPENAI_API_KEY) {

@@ -213,7 +213,7 @@ export function OnboardingPage() {
                 Connect your data
               </h2>
               <p className="text-sm text-gray-500 mb-6">
-                Point Rhona at a Postgres database (Supabase, Neon, RDS, or
+                Point TeamMem at a Postgres database (Supabase, Neon, RDS, or
                 plain Postgres). We'll introspect the schema so you can pick
                 which tables and columns your agents can read. Read-only,
                 encrypted, always.
@@ -476,15 +476,15 @@ export function OnboardingPage() {
                 <pre className="text-xs text-gray-300 overflow-x-auto leading-relaxed">
 {`{
   "mcpServers": {
-    "rhona": {
+    "teammem": {
       "command": "npx",
-      "args": ["-y", "rhona-mcp"],
+      "args": ["-y", "teammem-mcp"],
       "env": {`}
                   <span className="text-green-400">{`
-        "RHONA_API_KEY": "generate in Settings"`}</span>
+        "TEAMMEM_API_KEY": "generate in Settings"`}</span>
                   {`,`}
                   <span className="text-blue-400">{`
-        "RHONA_WORKSPACE": "${workspace?.id || "your-workspace-id"}"`}</span>
+        "TEAMMEM_WORKSPACE": "${workspace?.id || "your-workspace-id"}"`}</span>
 {`
       }
     }

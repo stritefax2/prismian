@@ -5,7 +5,7 @@ import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
 import { enqueueEmbedding } from "../services/embeddings.js";
 import { logAction } from "../services/audit.js";
 import type { AppEnv } from "../types.js";
-import type { AgentPermissions } from "@rhona/shared";
+import type { AgentPermissions } from "@teammem/shared";
 import {
   canAccessCollection,
   checkRateLimit,

@@ -17,12 +17,12 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.13(hono@4.12.12)
-      '@rhona/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@supabase/supabase-js':
         specifier: ^2.103.0
         version: 2.103.0
+      '@teammem/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
@@ -94,12 +94,12 @@ importers:
 
   apps/web:
     dependencies:
-      '@rhona/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@supabase/supabase-js':
         specifier: ^2.103.0
         version: 2.103.0
+      '@teammem/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       react:
         specifier: ^19.0.0
         version: 19.2.5

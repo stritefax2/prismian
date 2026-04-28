@@ -6,7 +6,7 @@ import {
   canUseQueryType,
   getMaxResults,
 } from "./permissions.js";
-import type { AgentPermissions } from "@rhona/shared";
+import type { AgentPermissions } from "@teammem/shared";
 
 const fullAccess: AgentPermissions = {
   collections: "*",

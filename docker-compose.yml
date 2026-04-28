@@ -5,13 +5,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: rhona
-      POSTGRES_PASSWORD: rhona
-      POSTGRES_DB: rhona
+      POSTGRES_USER: teammem
+      POSTGRES_PASSWORD: teammem
+      POSTGRES_DB: teammem
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rhona"]
+      test: ["CMD-SHELL", "pg_isready -U teammem"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -5,7 +5,7 @@ import { apiFetch } from "../lib/api.js";
 import { AppShell } from "../components/AppShell.js";
 import { ActivityFeed } from "../components/ActivityFeed.js";
 import { useWorkspaceSocket } from "../lib/ws.js";
-import type { ChangeEvent } from "@rhona/shared";
+import type { ChangeEvent } from "@teammem/shared";
 
 interface Workspace {
   id: string;
@@ -342,7 +342,7 @@ export function WorkspacePage() {
                   </p>
                   <p className="text-xs text-blue-700">
                     After any conversation: "Save the key takeaways to
-                    Rhona." Your AI handles the rest.
+                    TeamMem." Your AI handles the rest.
                   </p>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">

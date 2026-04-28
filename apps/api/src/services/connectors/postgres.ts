@@ -1,5 +1,5 @@
 import pg from "pg";
-import type { DataSourceTable, SourceConfig } from "@rhona/shared";
+import type { DataSourceTable, SourceConfig } from "@teammem/shared";
 
 const MAX_ROWS_PER_SYNC = Number(process.env.CONNECTOR_MAX_ROWS) || 10_000;
 const INTROSPECT_STATEMENT_TIMEOUT_MS = 10_000;

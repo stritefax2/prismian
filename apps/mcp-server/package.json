@@ -1,11 +1,11 @@
 {
-  "name": "rhona-mcp",
+  "name": "teammem-mcp",
   "version": "0.1.0",
-  "description": "MCP server for Rhona — connect Claude, Cursor, or any MCP-compatible AI to your team's persistent knowledge base",
+  "description": "MCP server for TeamMem — connect Claude, Cursor, or any MCP-compatible AI to your team's persistent knowledge base",
   "type": "module",
   "bin": {
-    "rhona-mcp": "./dist/index.js",
-    "rhona-mcp-sse": "./dist/sse.js"
+    "teammem-mcp": "./dist/index.js",
+    "teammem-mcp-sse": "./dist/sse.js"
   },
   "files": [
     "dist",

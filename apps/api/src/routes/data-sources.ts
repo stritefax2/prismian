@@ -5,7 +5,7 @@ import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
 import {
   createDataSourceSchema,
   introspectDataSourceSchema,
-} from "@rhona/shared";
+} from "@teammem/shared";
 import type { AppEnv } from "../types.js";
 import { encryptConfig, decryptConfig } from "../services/connectors/crypto.js";
 import {
