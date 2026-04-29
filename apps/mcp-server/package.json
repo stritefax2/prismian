@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "MCP server for TeamMem — connect Claude, Cursor, or any MCP-compatible AI to your team's persistent knowledge base",
   "type": "module",
+  "author": "TeamMem",
+  "homepage": "https://teammem-web.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stritefax2/teammem.git",
+    "directory": "apps/mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/stritefax2/teammem/issues"
+  },
   "bin": {
     "teammem-mcp": "./dist/index.js",
     "teammem-mcp-sse": "./dist/sse.js"
