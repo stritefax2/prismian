@@ -113,6 +113,41 @@ export function WorkspacePage() {
       breadcrumbs={[{ label: workspace.name }]}
     >
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        {/* Persistent quick-actions bar — visible regardless of how full
+            the workspace is. The empty-state CTAs are hidden once
+            collections exist; without this strip, users have to guess
+            that the only way to add a data source / generate an agent
+            key / view the audit log is via the small Settings link in
+            the AppShell header. */}
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <Link
+            to={`/w/${id}/settings?tab=sources`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            <span className="text-emerald-500">+</span>
+            Data source
+          </Link>
+          <Link
+            to={`/w/${id}/settings?tab=agents`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            <span className="text-emerald-500">+</span>
+            Agent key
+          </Link>
+          <Link
+            to={`/w/${id}/settings?tab=audit`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Audit log
+          </Link>
+          <Link
+            to={`/w/${id}/settings?tab=members`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-2.5 py-1.5 rounded-md transition-colors"
+          >
+            Members
+          </Link>
+        </div>
+
         {/* Solo user invite nudge */}
         {memberCount === 1 && !dismissedNudge && (
           <div className="mb-6 bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-4">
