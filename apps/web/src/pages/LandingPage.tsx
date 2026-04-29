@@ -99,6 +99,7 @@ export function LandingPage() {
               <a href="#problem" className="hover:text-gray-900 transition-colors">Why</a>
               <a href="#product" className="hover:text-gray-900 transition-colors">Product</a>
               <a href="#security" className="hover:text-gray-900 transition-colors">Security</a>
+              <a href="#data-flow" className="hover:text-gray-900 transition-colors">Data flow</a>
               <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
             </nav>
           </div>
@@ -1235,6 +1236,158 @@ export function LandingPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Data flow & honesty ─── */}
+      <section id="data-flow" className="py-20 sm:py-28">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <span className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Honesty up front
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
+              Where your data lives
+            </h2>
+            <p className="mt-3 text-gray-500 max-w-xl mx-auto leading-relaxed">
+              We don't proxy queries to your prod database. We mirror the
+              columns you select into our Postgres so agents can be
+              permissioned, redacted, and audited before data leaves the
+              API. Here's the full story.
+            </p>
+          </div>
+
+          <div className="bg-gray-950 rounded-xl ring-1 ring-gray-200 shadow-lg shadow-gray-900/5 overflow-hidden mb-8">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-800 bg-gray-900/60">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-gray-500">
+                data flow
+              </span>
+            </div>
+            <pre className="text-[12px] sm:text-[13px] leading-relaxed text-gray-300 font-mono p-5 overflow-x-auto">
+{`  YOUR SOURCE DB                      TEAMMEM                        AI TOOLS
+  ──────────────                      ───────                        ────────
+
+  ┌─────────────┐                    ┌──────────────┐               ┌────────┐
+  │  Postgres   │  read-only,        │  Postgres    │  scoped,      │ Cursor │
+  │  (Supabase, │  selected cols     │  (mirror of  │  redacted,    │ Claude │
+  │   Neon,     │  ─────────────►    │  your cols)  │  audited      │ ChatGPT│
+  │   RDS, …)   │  every 15 min      │              │  ─────────►   │ etc.   │
+  └─────────────┘                    └──────────────┘               └────────┘
+                                            ▲
+                                            │
+                                  ┌─────────┴─────────┐
+                                  │  audit_log table  │  (every read,
+                                  │                   │   every actor,
+                                  │                   │   every row id)
+                                  └───────────────────┘
+
+  Agents NEVER hit your source DB.
+  Writes from agents go ONLY into native (non-source) collections.`}
+            </pre>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-3 mb-8">
+            <div className="bg-white rounded-md border border-gray-200 p-4">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-gray-500 mb-2">
+                Encryption
+              </p>
+              <ul className="text-xs text-gray-700 space-y-1.5 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    Connection strings: AES-256-GCM at rest with a key only
+                    the API has
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    All transport: TLS 1.2+ (Vercel, Supabase, your DB)
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5 shrink-0">○</span>
+                  <span className="text-gray-600">
+                    Synced rows: Supabase disk encryption only (no extra
+                    app-level layer yet — on roadmap)
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-white rounded-md border border-gray-200 p-4">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-gray-500 mb-2">
+                Access
+              </p>
+              <ul className="text-xs text-gray-700 space-y-1.5 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    Workspace isolation enforced in middleware{" "}
+                    <em className="not-italic text-gray-500">and</em>{" "}
+                    Postgres RLS
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    Per-agent column redaction enforced before data leaves
+                    the API
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-400 mt-0.5 shrink-0">○</span>
+                  <span className="text-gray-600">
+                    Founder retains DB-admin access (early stage). Not yet
+                    SOC 2 — happy to walk through controls 1:1.
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-white rounded-md border border-gray-200 p-4">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-gray-500 mb-2">
+                Retention
+              </p>
+              <ul className="text-xs text-gray-700 space-y-1.5 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    Delete a workspace → every entry, audit row, and key
+                    cascades within seconds
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    Delete a collection → its synced rows go with it
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                  <span>
+                    Disconnect a source → cascades to every collection that
+                    reads from it
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-700 leading-relaxed">
+            <p>
+              <span className="font-medium text-gray-900">
+                For your first connection, point us at non-production data
+              </span>{" "}
+              — a staging DB, a read replica, or a workspace clone. Not
+              because we'd misuse prod, but because nobody trusts a beta
+              with real customers on day one and you shouldn't either.
+              When you're ready to graduate to prod data, we'll have done
+              the encryption-at-rest work and a SOC&nbsp;2 audit's worth
+              of paper.
+            </p>
           </div>
         </div>
       </section>
