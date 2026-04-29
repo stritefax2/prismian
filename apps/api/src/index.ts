@@ -16,7 +16,6 @@ import { dataSourceRoutes } from "./routes/data-sources.js";
 import { adminRoutes } from "./routes/admin.js";
 import { errorHandler } from "./middleware/error.js";
 import { serve } from "@hono/node-server";
-import { startEmbeddingWorker } from "./services/embeddings.js";
 import { startSyncScheduler } from "./services/connectors/sync.js";
 import { assertEncryptionKeyPresent } from "./services/connectors/crypto.js";
 
@@ -95,10 +94,6 @@ if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
   serve({ fetch: app.fetch, port }, (info) => {
     console.log(`TeamMem API running on http://localhost:${info.port}`);
   });
-
-  if (process.env.OPENAI_API_KEY) {
-    startEmbeddingWorker();
-  }
 
   if (process.env.CONNECTOR_ENCRYPTION_KEY) {
     try {

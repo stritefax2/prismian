@@ -89,7 +89,9 @@ export const updateEntrySchema = z.object({
 export const searchSchema = z.object({
   query: z.string().min(1),
   collection: z.string().uuid().optional(),
-  limit: z.number().int().min(1).max(100).default(10),
+  // Default 20 (was 10): keyword search is OR-matched, so we want to surface
+  // several ranked candidates rather than a single best guess.
+  limit: z.number().int().min(1).max(100).default(20),
   filters: z.record(z.unknown()).optional(),
 });
 

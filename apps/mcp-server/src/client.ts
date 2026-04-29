@@ -90,6 +90,26 @@ export function getWorkspaceId(): string {
   return WORKSPACE_ID;
 }
 
+export type SearchDiagnostic = {
+  collections_searched: number;
+  collections_with_text_content: number;
+  total_entries_in_scope: number;
+  pending_embeddings: number;
+  semantic_search_active: boolean;
+  collections: Array<{
+    id: string;
+    name: string;
+    synced: boolean;
+    writable: boolean;
+    content_column: string | null;
+    queryable_fields: string[];
+    searchable_by_text: boolean;
+    entry_count: number;
+    pending_embeddings: number;
+  }>;
+  suggestion: string;
+};
+
 export const api = {
   search(
     query: string,
@@ -99,7 +119,10 @@ export const api = {
       filters?: Record<string, unknown>;
     }
   ) {
-    return request<{ results: unknown[] }>("POST", "/api/v1/search", {
+    return request<{
+      results: unknown[];
+      diagnostic?: SearchDiagnostic;
+    }>("POST", "/api/v1/search", {
       query,
       workspace_id: getWorkspaceId(),
       ...options,

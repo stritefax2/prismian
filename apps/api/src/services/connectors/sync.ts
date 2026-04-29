@@ -1,7 +1,6 @@
 import { query, transaction } from "../../db/client.js";
 import { decryptConfig } from "./crypto.js";
 import { readRows } from "./postgres.js";
-import { enqueueEmbedding } from "../embeddings.js";
 import type { SourceConfig } from "../../shared/index.js";
 
 const SYNC_INTERVAL_MS = Number(process.env.SYNC_INTERVAL_MS) || 15 * 60 * 1000;
@@ -138,7 +137,6 @@ export async function runSyncNow(collectionId: string): Promise<SyncOutcome> {
       col.source_config
     );
 
-    const touchedIds: string[] = [];
     const BATCH_SIZE = 500;
 
     await transaction(async (client) => {
@@ -178,11 +176,9 @@ export async function runSyncNow(collectionId: string): Promise<SyncOutcome> {
             version = entries.version + 1
           WHERE entries.structured_data IS DISTINCT FROM EXCLUDED.structured_data
              OR entries.content IS DISTINCT FROM EXCLUDED.content
-          RETURNING id
         `;
 
-        const upsert = await client.query<{ id: string }>(upsertSql, params);
-        for (const r of upsert.rows) touchedIds.push(r.id);
+        await client.query(upsertSql, params);
       }
 
       // Delete rows that disappeared from the source.
@@ -204,17 +200,6 @@ export async function runSyncNow(collectionId: string): Promise<SyncOutcome> {
         );
       }
     });
-
-    // Enqueue embeddings outside the transaction. Only for collections with
-    // a content_column — structured-only rows don't benefit much from
-    // embedding individual field values.
-    if (col.source_config.content_column) {
-      for (const entryId of touchedIds) {
-        enqueueEmbedding(entryId).catch((e) =>
-          console.error("Failed to enqueue embedding during sync:", e)
-        );
-      }
-    }
 
     const outcome: SyncOutcome = {
       status: "ok",

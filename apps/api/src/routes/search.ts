@@ -8,7 +8,6 @@ import {
   aggregateSchema,
 } from "../shared/index.js";
 import type { AppEnv } from "../types.js";
-import { generateEmbedding } from "../services/embeddings.js";
 import {
   canAccessCollection,
   canUseQueryType,
@@ -68,78 +67,37 @@ searchRoutes.post("/", async (c) => {
   }
 
   let results: any[] = [];
-  const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-  const canSemantic = !permissions || canUseQueryType(permissions, "semantic");
   const canFulltext = !permissions || canUseQueryType(permissions, "fulltext");
 
-  if (hasOpenAIKey && canSemantic) {
-    try {
-      const embedding = await generateEmbedding(searchQuery);
-      const pgVector = `[${embedding.join(",")}]`;
-
-      // Search both entry-level embeddings and chunk-level embeddings
-      const params: unknown[] = [pgVector, workspaceId, effectiveLimit];
-
-      let colFilter = "";
-      if (collection) {
-        colFilter = ` AND e.collection_id = $${params.length + 1}`;
-        params.push(collection);
-      } else if (collectionFilter) {
-        colFilter = ` AND e.collection_id = ANY($${params.length + 1})`;
-        params.push(collectionFilter);
-      }
-
-      const sql = `
-        SELECT DISTINCT ON (entry_id) entry_id, collection_id, collection, content, structured_data, relevance_score, chunk_text
-        FROM (
-          SELECT e.id AS entry_id, c.id AS collection_id, c.name AS collection, e.content, e.structured_data,
-                 1 - (e.embedding <=> $1::vector) AS relevance_score,
-                 NULL AS chunk_text
-          FROM entries e
-          INNER JOIN collections c ON e.collection_id = c.id
-          WHERE e.workspace_id = $2 AND e.embedding IS NOT NULL ${colFilter}
-
-          UNION ALL
-
-          SELECT e.id AS entry_id, c.id AS collection_id, c.name AS collection, e.content, e.structured_data,
-                 1 - (ec.embedding <=> $1::vector) AS relevance_score,
-                 ec.chunk_text
-          FROM entry_chunks ec
-          INNER JOIN entries e ON ec.entry_id = e.id
-          INNER JOIN collections c ON e.collection_id = c.id
-          WHERE e.workspace_id = $2 AND ec.embedding IS NOT NULL ${colFilter}
-        ) sub
-        ORDER BY entry_id, relevance_score DESC
-      `;
-
-      const allResults = await query(sql, params);
-
-      // Re-sort by best score per entry, take top N
-      results = allResults.rows
-        .sort((a: any, b: any) => b.relevance_score - a.relevance_score)
-        .slice(0, effectiveLimit)
-        .map((r: any) => ({
-          entry_id: r.entry_id,
-          collection_id: r.collection_id,
-          collection: r.collection,
-          content: r.chunk_text || (r.content?.slice(0, 500) ?? null),
-          structured_data: r.structured_data,
-          relevance_score: r.relevance_score,
-        }));
-    } catch (e) {
-      console.error("Semantic search failed, falling back to full-text:", e);
-    }
-  }
-
-  if (results.length === 0 && canFulltext) {
+  if (canFulltext) {
+    // FTS-only mode. Two improvements over the previous behavior:
+    //   (1) tokenize structured_data alongside content, so entries that store
+    //       all their data as JSON (CRM rows, user profiles, etc.) are findable
+    //       by keyword. structured_data::text yields the JSON serialization;
+    //       to_tsvector strips braces/quotes/punctuation and stems values.
+    //   (2) match with OR semantics (any token), not plainto_tsquery's strict
+    //       AND. ts_rank still ranks entries that match more terms higher, so
+    //       a query like "Google earnings revenue" surfaces full matches first
+    //       and partial matches after — instead of returning nothing if any
+    //       single word is missing.
+    const tsExpr = `to_tsvector('english', COALESCE(e.content, '') || ' ' || COALESCE(e.structured_data::text, ''))`;
     const params: unknown[] = [searchQuery, workspaceId, effectiveLimit];
     let sql = `
-      SELECT e.id AS entry_id, c.id AS collection_id, c.name AS collection, e.content, e.structured_data,
-             ts_rank(to_tsvector('english', COALESCE(e.content, '')), plainto_tsquery($1)) AS relevance_score
+      WITH q AS (
+        SELECT to_tsquery(
+          'english',
+          NULLIF(replace(plainto_tsquery('english', $1)::text, '&', '|'), '')
+        ) AS qq
+      )
+      SELECT e.id AS entry_id, c.id AS collection_id, c.name AS collection,
+             e.content, e.structured_data,
+             ts_rank(${tsExpr}, q.qq) AS relevance_score
       FROM entries e
       INNER JOIN collections c ON e.collection_id = c.id
+      CROSS JOIN q
       WHERE e.workspace_id = $2
-        AND to_tsvector('english', COALESCE(e.content, '')) @@ plainto_tsquery($1)
+        AND q.qq IS NOT NULL
+        AND ${tsExpr} @@ q.qq
     `;
 
     if (collection) {
@@ -175,8 +133,100 @@ searchRoutes.post("/", async (c) => {
     });
   }
 
+  // When search returns nothing, agents need to know *why* — was the workspace
+  // empty? Were there only structured rows with no embeddings? Was OPENAI_API_KEY
+  // unset? Without this, the LLM gives up and tells the user "nothing stored on
+  // that topic," which is often wrong (the data exists, the query type is wrong).
+  if (results.length === 0) {
+    const diagnostic = await buildEmptyDiagnostic({
+      workspaceId,
+      collectionFilter,
+      requestedCollection: collection ?? null,
+    });
+    return c.json({ results: [], diagnostic });
+  }
+
   return c.json({ results });
 });
+
+async function buildEmptyDiagnostic(args: {
+  workspaceId: string;
+  collectionFilter: string[] | null;
+  requestedCollection: string | null;
+}) {
+  const { workspaceId, collectionFilter, requestedCollection } = args;
+  const params: unknown[] = [workspaceId];
+  let where = "WHERE c.workspace_id = $1";
+  if (requestedCollection) {
+    where += ` AND c.id = $${params.length + 1}`;
+    params.push(requestedCollection);
+  } else if (collectionFilter) {
+    where += ` AND c.id = ANY($${params.length + 1})`;
+    params.push(collectionFilter);
+  }
+
+  const colInfo = await query<{
+    id: string;
+    name: string;
+    source_id: string | null;
+    source_config: { columns?: string[]; content_column?: string } | null;
+    entry_count: number;
+  }>(
+    `SELECT c.id, c.name, c.source_id, c.source_config,
+            (SELECT COUNT(*)::int FROM entries WHERE collection_id = c.id) AS entry_count
+     FROM collections c
+     ${where}`,
+    params
+  );
+
+  const collections = colInfo.rows.map((r) => {
+    const synced = Boolean(r.source_id);
+    const contentCol = r.source_config?.content_column ?? null;
+    const queryableFields = r.source_config?.columns ?? [];
+    return {
+      id: r.id,
+      name: r.name,
+      synced,
+      writable: !synced,
+      content_column: contentCol,
+      queryable_fields: queryableFields,
+      entry_count: r.entry_count,
+    };
+  });
+
+  const withEntries = collections.filter((c) => c.entry_count > 0);
+  const totalEntries = collections.reduce((s, c) => s + c.entry_count, 0);
+
+  let suggestion: string;
+  if (collections.length === 0) {
+    suggestion =
+      "No accessible collections in this workspace. Ask an admin for read access, or check that you're querying the right workspace.";
+  } else if (totalEntries === 0) {
+    suggestion =
+      "Collections exist but have no entries yet. Use store_document or write_entry to add content.";
+  } else if (withEntries.length > 0) {
+    const fieldHints = withEntries
+      .filter((c) => c.queryable_fields.length > 0)
+      .map(
+        (c) =>
+          `${c.name} (${c.queryable_fields.slice(0, 5).join(", ")}${c.queryable_fields.length > 5 ? ", …" : ""})`
+      )
+      .join("; ");
+    suggestion = fieldHints
+      ? `Keyword search matched no entries. For exact-field matches try query_structured on: ${fieldHints}. Or rephrase with terms likely to appear verbatim.`
+      : "Keyword search matched no entries. Try simpler/fewer keywords, or use query_structured if you know the field shape.";
+  } else {
+    suggestion =
+      "Your query matched no entries. Rephrase with simpler keywords, or check list_collections to see what's stored.";
+  }
+
+  return {
+    collections_searched: collections.length,
+    total_entries_in_scope: totalEntries,
+    collections,
+    suggestion,
+  };
+}
 
 searchRoutes.post("/structured", async (c) => {
   const body = await c.req.json();

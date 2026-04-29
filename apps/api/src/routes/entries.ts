@@ -5,7 +5,6 @@ import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
 import { createEntrySchema, updateEntrySchema } from "../shared/index.js";
 import type { AgentPermissions } from "../shared/index.js";
 import type { AppEnv } from "../types.js";
-import { enqueueEmbedding } from "../services/embeddings.js";
 import { logAction } from "../services/audit.js";
 import { mergeStructuredData } from "../services/merge.js";
 import {
@@ -139,9 +138,6 @@ entryRoutes.post("/", async (c) => {
     return entry;
   });
 
-  enqueueEmbedding(entry.id).catch((e) =>
-    console.error("Failed to enqueue embedding:", e)
-  );
   logAction(auth, workspaceId, "create", "entry", entry.id, {
     collection: collectionName,
   });
@@ -320,9 +316,6 @@ entryRoutes.put("/:id", async (c) => {
 
   const entry = result.entry;
 
-  enqueueEmbedding(entry.id).catch((e) =>
-    console.error("Failed to enqueue embedding:", e)
-  );
   logAction(auth, entry.workspace_id, "update", "entry", entry.id);
 
   // Supabase Realtime picks up the UPDATE automatically

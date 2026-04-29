@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { query, transaction } from "../db/client.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
-import { enqueueEmbedding } from "../services/embeddings.js";
 import { logAction } from "../services/audit.js";
 import type { AppEnv } from "../types.js";
 import type { AgentPermissions } from "../shared/index.js";
@@ -73,7 +72,7 @@ documentRoutes.post("/store", async (c) => {
     ...(metadata || {}),
   };
 
-  // One entry with full content — chunking happens in the embedding pipeline
+  // One entry with full content — keyword search runs on the full text.
   const entry = await transaction(async (client) => {
     const result = await client.query(
       `INSERT INTO entries (collection_id, workspace_id, structured_data, content, created_by, created_by_agent)
@@ -105,11 +104,6 @@ documentRoutes.post("/store", async (c) => {
 
     return entry;
   });
-
-  // The embedding pipeline handles chunking long content into entry_chunks automatically
-  enqueueEmbedding(entry.id).catch((e) =>
-    console.error("Failed to enqueue embedding:", e)
-  );
 
   logAction(auth, workspaceId, "store_document", "entry", entry.id, {
     collection: collectionName,

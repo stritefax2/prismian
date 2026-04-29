@@ -15,30 +15,59 @@ const server = new McpServer({
 
 server.tool(
   "search",
-  `Natural-language search over text content. Best for documents, meeting notes, decisions, and any collection whose entries contain prose.
+  `Keyword search across both content prose AND structured field values. Returns several top-ranked matches, not a single answer — review the list before deciding.
+
+HOW IT MATCHES:
+- Tokenizes the query and matches entries that contain ANY of the words (OR semantics)
+- Searches both 'content' (long text) and 'structured_data' (JSON field values)
+- Results are ranked by ts_rank: entries matching more terms rank higher, so a 5-word query naturally surfaces full matches first and partial matches after
 
 WHEN TO USE:
-- You're looking for something in a native collection (Decisions, Meeting Notes, Insights, Agent Observations)
-- You're looking for a specific row in a synced table that has a content_column (see list_collections) — semantic search only hits text columns, never structured fields
-- You have a fuzzy natural-language question
+- Fuzzy natural-language question across the workspace
+- You don't yet know which collection holds the answer
+- You want a shortlist of candidates to skim
 
-WHEN NOT TO USE:
-- You need to filter by exact field values (status = 'at_risk', mrr > 1000) — use query_structured instead
-- The target collection is synced and has no content_column — search will return zero results from it; use query_structured
+WHEN query_structured IS BETTER:
+- You have an exact filter (status = 'at_risk', mrr > 1000)
+- You want every row matching a known field value
+- You need sort/pagination/aggregation
 
-Returns entries ranked by semantic similarity (requires OPENAI_API_KEY on the server) or full-text match.
+If search returns zero results, the response includes a 'diagnostic' object listing the collections in this workspace and suggesting the next tool. Read it before reporting "nothing found" — the data may exist but require query_structured, or use simpler keywords.
 
 Example queries:
-- "What did we decide about Q3 pricing?" (Decisions collection)
-- "Customer feedback mentioning latency" (if notes column is indexed)
-- "Action items from last week's standup" (Meeting Notes)`,
+- "Q3 pricing decision"
+- "Google earnings" (matches entries storing "Google" in content OR in structured fields like {company: "Google"})
+- "standup action items"`,
   {
-    query: z.string().describe("Natural-language search query. Be specific for better ranking."),
+    query: z.string().describe("Keywords to search. Multiple words are OR-matched and ranked by total match strength."),
     collection: z.string().optional().describe("Optional collection ID to scope the search. Get IDs from list_collections."),
-    limit: z.number().optional().default(10).describe("Max results (1-100, default 10)"),
+    limit: z.number().optional().default(20).describe("Max results (1-100, default 20)"),
   },
   async ({ query, collection, limit }) => {
-    const { results } = await api.search(query, { collection, limit });
+    const { results, diagnostic } = await api.search(query, { collection, limit });
+
+    // Zero results aren't an answer — they're a routing decision. Return the
+    // diagnostic alongside the empty array so the LLM can pick the right
+    // follow-up tool in the next turn instead of telling the user nothing exists.
+    if (results.length === 0 && diagnostic) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                results: [],
+                diagnostic,
+                next_step: diagnostic.suggestion,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+
     return {
       content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
     };
