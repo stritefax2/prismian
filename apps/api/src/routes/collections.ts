@@ -98,12 +98,56 @@ collectionRoutes.post("/", async (c) => {
 
   const collection = result.rows[0];
 
-  // Kick off an initial sync in the background so the collection is populated
-  // by the time the user lands on it.
+  // Run the initial sync inline. On serverless (Vercel), fire-and-forget
+  // promises after the response are killed by the runtime — claim() flips
+  // sync_status='syncing' but finalize() never runs, leaving the collection
+  // stuck. Awaiting here keeps the function alive through finalize().
+  // The trade is a slower POST (a few seconds for typical tables, up to ~30s
+  // for the 10k-row cap) — acceptable, since the alternative is a stuck UI.
   if (collection.source_id) {
-    runSyncNow(collection.id).catch((e) =>
-      console.error(`Initial sync failed for ${collection.id}:`, e)
-    );
+    try {
+      const outcome = await runSyncNow(collection.id);
+      if (outcome.status === "error") {
+        // The sync recorded its own error in last_sync_error already; the
+        // collection still exists, so we hand it back with a hint instead
+        // of failing the whole request.
+        return c.json(
+          {
+            collection,
+            initial_sync: { status: "error", error: outcome.error },
+          },
+          201
+        );
+      }
+      if (outcome.status === "ok") {
+        return c.json(
+          {
+            collection,
+            initial_sync: {
+              status: "ok",
+              rows_synced: outcome.rows_synced,
+              truncated: outcome.truncated,
+            },
+          },
+          201
+        );
+      }
+    } catch (e) {
+      console.error(`Initial sync failed for ${collection.id}:`, e);
+      // Even on a thrown error, the collection row exists. Return it with
+      // an error hint so the UI can offer a retry rather than 500-ing.
+      return c.json(
+        {
+          collection,
+          initial_sync: {
+            status: "error",
+            error:
+              e instanceof Error ? e.message : "Initial sync failed",
+          },
+        },
+        201
+      );
+    }
   }
 
   return c.json({ collection }, 201);
