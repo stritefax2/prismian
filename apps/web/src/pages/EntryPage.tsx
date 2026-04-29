@@ -61,6 +61,7 @@ export function EntryPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [viewAsJson, setViewAsJson] = useState(false);
 
   useEffect(() => {
     if (!entryId) return;
@@ -214,6 +215,13 @@ export function EntryPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setViewAsJson((v) => !v)}
+                className="text-[10px] font-mono uppercase tracking-wider text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-2 py-0.5 rounded"
+                title="Toggle raw JSON view"
+              >
+                {viewAsJson ? "rendered" : "json"}
+              </button>
+              <button
                 onClick={() => setShowVersions(!showVersions)}
                 className="text-xs text-gray-900 hover:underline"
               >
@@ -238,7 +246,60 @@ export function EntryPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSave}>
+          {viewAsJson && !editing ? (
+            <div className="p-5">
+              <div className="bg-gray-950 rounded-md ring-1 ring-gray-900 overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-800 bg-gray-900/60">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-gray-500">
+                    raw entry
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        JSON.stringify(
+                          {
+                            id: entry.id,
+                            structured_data: entry.structured_data,
+                            content: entry.content,
+                            source_row_id: entry.source_row_id,
+                            version: entry.version,
+                            created_at: entry.created_at,
+                            updated_at: entry.updated_at,
+                          },
+                          null,
+                          2
+                        )
+                      );
+                    }}
+                    className="text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-gray-200"
+                  >
+                    copy
+                  </button>
+                </div>
+                <pre className="text-[12px] leading-relaxed text-gray-300 font-mono p-4 overflow-x-auto">
+                  {JSON.stringify(
+                    {
+                      id: entry.id,
+                      structured_data: entry.structured_data,
+                      content: entry.content,
+                      source_row_id: entry.source_row_id,
+                      version: entry.version,
+                      created_at: entry.created_at,
+                      updated_at: entry.updated_at,
+                    },
+                    null,
+                    2
+                  )}
+                </pre>
+              </div>
+            </div>
+          ) : null}
+
+          <form
+            onSubmit={handleSave}
+            className={viewAsJson && !editing ? "hidden" : ""}
+          >
             {/* Structured fields */}
             {(fields.length > 0 || editing) && (
               <div className="px-6 py-5 border-b border-gray-100">

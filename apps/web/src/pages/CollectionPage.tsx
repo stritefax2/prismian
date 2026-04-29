@@ -7,6 +7,7 @@ import { AppShell } from "../components/AppShell.js";
 import Markdown from "react-markdown";
 import { ImportDialog } from "../components/ImportDialog.js";
 import { DocumentUpload } from "../components/DocumentUpload.js";
+import { EditColumnsDialog } from "../components/EditColumnsDialog.js";
 import type { ChangeEvent } from "@teammem/shared";
 
 interface Collection {
@@ -63,6 +64,10 @@ export function CollectionPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState("");
+  const [showManageMenu, setShowManageMenu] = useState(false);
+  const [showEditColumns, setShowEditColumns] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const PAGE_SIZE = 25;
 
   const isConnected = Boolean(collection?.source_id);
@@ -178,6 +183,21 @@ export function CollectionPage() {
     loadEntries();
   }
 
+  async function handleDeleteCollection() {
+    if (!collectionId || !workspaceId) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/v1/collections/${collectionId}`, {
+        method: "DELETE",
+      });
+      navigate(`/w/${workspaceId}`);
+    } catch (err: any) {
+      setSyncError(err.message || "Couldn't delete collection.");
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
+
   async function handleSyncNow() {
     if (!collectionId) return;
     setSyncing(true);
@@ -277,18 +297,23 @@ export function CollectionPage() {
     >
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {isConnected && collection.source_config && (
-          <div className="mb-4 bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="mb-4 bg-white border border-gray-200 rounded-md p-4 flex items-center justify-between gap-4 flex-wrap">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                <span className="text-xs bg-gray-100 text-gray-900 px-2 py-0.5 rounded-full font-medium">
-                  Read-only
+              <p className="text-sm font-medium text-gray-900 flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-mono uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">
+                  read-only
                 </span>
                 Synced from{" "}
-                <code className="bg-white/80 text-gray-900 px-1.5 py-0.5 rounded text-xs font-mono">
+                <code className="bg-gray-100 border border-gray-200 text-gray-900 px-1.5 py-0.5 rounded text-xs font-mono">
                   {collection.source_config.table}
                 </code>
+                {total > 0 && (
+                  <span className="text-xs text-gray-400 font-mono">
+                    · {total.toLocaleString()} rows
+                  </span>
+                )}
               </p>
-              <p className="text-xs text-gray-900 mt-0.5">
+              <p className="text-xs text-gray-500 mt-1">
                 {collection.last_sync_at
                   ? `Last synced ${new Date(collection.last_sync_at).toLocaleString()}`
                   : "Awaiting first sync"}
@@ -323,8 +348,85 @@ export function CollectionPage() {
                   ? "Syncing..."
                   : "Sync now"}
               </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowManageMenu((v) => !v)}
+                  onBlur={() =>
+                    setTimeout(() => setShowManageMenu(false), 150)
+                  }
+                  className="bg-white border border-gray-200 hover:border-gray-300 text-gray-700 w-8 h-7 rounded-md text-xs font-medium transition-colors inline-flex items-center justify-center"
+                  aria-label="Manage collection"
+                >
+                  ⋮
+                </button>
+                {showManageMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden min-w-[180px] z-20">
+                    <button
+                      onClick={() => {
+                        setShowManageMenu(false);
+                        setShowEditColumns(true);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Edit columns
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowManageMenu(false);
+                        setConfirmDelete(true);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 border-t border-gray-100 transition-colors"
+                    >
+                      Delete collection
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        )}
+
+        {confirmDelete && (
+          <div className="mb-4 bg-red-50/40 border border-red-200 rounded-md p-4">
+            <p className="text-sm font-medium text-gray-900 mb-1">
+              Delete this collection?
+            </p>
+            <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+              {isConnected
+                ? "Removes the synced mirror from TeamMem. Your source database is not touched. This cannot be undone."
+                : "Removes all entries in this collection. This cannot be undone."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDeleteCollection}
+                disabled={deleting}
+                className="bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-700 disabled:opacity-60 transition-colors"
+              >
+                {deleting ? "Deleting…" : "Delete permanently"}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showEditColumns && collection.source_config && (
+          <EditColumnsDialog
+            collectionId={collection.id}
+            sourceId={collection.source_id!}
+            currentColumns={collection.source_config.columns}
+            currentContentColumn={collection.source_config.content_column}
+            onClose={() => setShowEditColumns(false)}
+            onSaved={(updated) => {
+              setShowEditColumns(false);
+              setCollection(updated);
+              loadEntries();
+            }}
+          />
         )}
 
         {syncError && (
@@ -589,10 +691,23 @@ export function CollectionPage() {
                         <div className="flex items-center gap-1.5">
                           {entry.created_by_agent && (
                             <span
-                              className="w-4 h-4 rounded-full bg-gray-900 text-white flex items-center justify-center text-[9px] font-bold shrink-0"
+                              className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded shrink-0"
                               title="Created by AI agent"
                             >
-                              A
+                              <svg
+                                className="w-2.5 h-2.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2.5}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                                />
+                              </svg>
+                              agent
                             </span>
                           )}
                           <span className="text-xs text-gray-400">

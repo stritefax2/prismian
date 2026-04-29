@@ -265,6 +265,99 @@ collectionRoutes.get("/:id/entries", async (c) => {
   });
 });
 
+// Edit which columns a connected collection exposes, plus optionally
+// rename or change the content column. Triggers a sync immediately so
+// the new column set is reflected in the synced rows.
+//
+// Only fields that are actually safe to change post-creation are
+// updatable: name, source_config.columns, source_config.content_column.
+// We deliberately don't allow changing primary_key or table — those
+// would invalidate every existing source_row_id and would be a
+// re-create operation, not an edit.
+collectionRoutes.put("/:id", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+
+  const SAFE_NAME = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+  const updates: string[] = [];
+  const params: unknown[] = [];
+
+  if (typeof body.name === "string" && body.name.trim().length > 0) {
+    params.push(body.name.trim());
+    updates.push(`name = $${params.length}`);
+  }
+
+  // Patch source_config in JSONB. Only columns + content_column.
+  const cur = await query<{ source_config: Record<string, unknown> | null }>(
+    "SELECT source_config FROM collections WHERE id = $1",
+    [id]
+  );
+  if (cur.rows.length === 0) {
+    return c.json({ error: "Collection not found" }, 404);
+  }
+  const currentConfig = cur.rows[0].source_config;
+
+  if (Array.isArray(body.columns) && currentConfig) {
+    const valid = body.columns
+      .filter((x: unknown): x is string => typeof x === "string")
+      .filter((x: string) => SAFE_NAME.test(x));
+    if (valid.length === 0) {
+      return c.json({ error: "At least one column must be selected" }, 400);
+    }
+    // Always include the primary_key in the column list — without it,
+    // sync can't track row identity.
+    const pk = (currentConfig.primary_key as string) || "";
+    const merged = Array.from(new Set([pk, ...valid].filter(Boolean)));
+
+    let nextContentCol = currentConfig.content_column as string | undefined;
+    if ("content_column" in body) {
+      if (body.content_column === null || body.content_column === "") {
+        nextContentCol = undefined;
+      } else if (
+        typeof body.content_column === "string" &&
+        SAFE_NAME.test(body.content_column)
+      ) {
+        nextContentCol = body.content_column;
+      }
+    }
+    // If content column was set but is no longer selected, drop it.
+    if (nextContentCol && !merged.includes(nextContentCol)) {
+      nextContentCol = undefined;
+    }
+
+    const nextConfig = {
+      ...currentConfig,
+      columns: merged,
+      content_column: nextContentCol,
+    };
+    params.push(nextConfig);
+    updates.push(`source_config = $${params.length}`);
+  }
+
+  if (updates.length === 0) {
+    return c.json({ error: "Nothing to update" }, 400);
+  }
+
+  params.push(id);
+  const result = await query(
+    `UPDATE collections SET ${updates.join(", ")}
+     WHERE id = $${params.length}
+     RETURNING ${COLLECTION_COLUMNS.replace(/c\./g, "")}`,
+    params
+  );
+
+  // If the column set changed, kick off an immediate sync so the user
+  // sees the new columns reflected without waiting for the cron.
+  const updated = result.rows[0];
+  if (updated.source_id) {
+    runSyncNow(updated.id).catch((e) =>
+      console.error(`Re-sync after edit failed for ${updated.id}:`, e)
+    );
+  }
+
+  return c.json({ collection: updated });
+});
+
 collectionRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
   await query("DELETE FROM collections WHERE id = $1", [id]);
