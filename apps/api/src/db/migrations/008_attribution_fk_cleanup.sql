@@ -40,13 +40,6 @@ ALTER TABLE entry_versions
   ADD CONSTRAINT entry_versions_changed_by_agent_fkey
   FOREIGN KEY (changed_by_agent) REFERENCES agent_keys(id) ON DELETE SET NULL;
 
--- collections.created_by → users
-ALTER TABLE collections
-  DROP CONSTRAINT IF EXISTS collections_created_by_fkey;
-ALTER TABLE collections
-  ADD CONSTRAINT collections_created_by_fkey
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
-
 -- workspace_invites.invited_by → users
 ALTER TABLE workspace_invites
   DROP CONSTRAINT IF EXISTS workspace_invites_invited_by_fkey;
@@ -59,4 +52,11 @@ ALTER TABLE data_sources
   DROP CONSTRAINT IF EXISTS data_sources_created_by_fkey;
 ALTER TABLE data_sources
   ADD CONSTRAINT data_sources_created_by_fkey
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+-- agent_keys.created_by → users
+ALTER TABLE agent_keys
+  DROP CONSTRAINT IF EXISTS agent_keys_created_by_fkey;
+ALTER TABLE agent_keys
+  ADD CONSTRAINT agent_keys_created_by_fkey
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
