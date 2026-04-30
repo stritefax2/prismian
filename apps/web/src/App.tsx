@@ -13,6 +13,7 @@ import { EntryPage } from "./pages/EntryPage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
 import { AcceptInvitePage } from "./pages/AcceptInvitePage.js";
 import { DocsToolsPage } from "./pages/DocsToolsPage.js";
+import { SecurityPage } from "./pages/SecurityPage.js";
 import type { ReactNode } from "react";
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -42,6 +43,7 @@ export function App() {
             them before signing up. */}
         <Route path="/docs" element={<DocsToolsPage />} />
         <Route path="/docs/tools" element={<DocsToolsPage />} />
+        <Route path="/security" element={<SecurityPage />} />
         <Route
           path="/login"
           element={

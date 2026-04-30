@@ -98,8 +98,8 @@ export function LandingPage() {
             <nav className="hidden sm:flex items-center gap-6 text-sm text-gray-600">
               <a href="#problem" className="hover:text-gray-900 transition-colors">Why</a>
               <a href="#product" className="hover:text-gray-900 transition-colors">Product</a>
-              <a href="#security" className="hover:text-gray-900 transition-colors">Security</a>
-              <a href="#data-flow" className="hover:text-gray-900 transition-colors">Data flow</a>
+              <Link to="/docs" className="hover:text-gray-900 transition-colors">Docs</Link>
+              <Link to="/security" className="hover:text-gray-900 transition-colors">Security</Link>
               <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
             </nav>
           </div>
@@ -1744,9 +1744,10 @@ export function LandingPage() {
                 AI-safe access layer for your team's data.
               </p>
             </div>
-            <div className="flex items-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-6 text-sm text-gray-500 flex-wrap">
               <a href="#product" className="hover:text-gray-300 transition-colors">Product</a>
-              <a href="#security" className="hover:text-gray-300 transition-colors">Security</a>
+              <Link to="/docs" className="hover:text-gray-300 transition-colors">Docs</Link>
+              <Link to="/security" className="hover:text-gray-300 transition-colors">Security</Link>
               <a href="#pricing" className="hover:text-gray-300 transition-colors">Pricing</a>
               <Link to="/login" className="hover:text-gray-300 transition-colors">Sign in</Link>
             </div>
