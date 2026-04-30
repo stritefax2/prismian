@@ -419,7 +419,14 @@ export function SettingsPage() {
         method: "DELETE",
         body: JSON.stringify({ confirm_name: confirmDeleteName }),
       });
-      navigate("/dashboard");
+      // Pass the deleted name as a query param so the dashboard can
+      // render a flash confirmation. Without this the user just
+      // teleports to a different page and has no proof the delete
+      // actually completed.
+      const params = new URLSearchParams({
+        deleted: confirmDeleteName,
+      });
+      navigate(`/dashboard?${params.toString()}`);
     } catch (err: any) {
       setDeleteError(
         err.message || "Couldn't delete this workspace — try again."

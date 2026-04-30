@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth.js";
 import { apiFetch } from "../lib/api.js";
 
@@ -13,6 +13,8 @@ interface Workspace {
 export function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deletedFlash = searchParams.get("deleted");
   const userEmail = user?.email ?? "";
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -26,12 +28,12 @@ export function DashboardPage() {
         setWorkspaces(data.workspaces);
         if (data.workspaces.length === 0) {
           navigate("/onboarding", { replace: true });
-        } else if (data.workspaces.length === 1) {
-          // Single workspace = no real choice. Skip the dashboard
-          // entirely and drop the user where they actually work.
-          // The dashboard remains useful for users with 2+ workspaces.
-          navigate(`/w/${data.workspaces[0].id}`, { replace: true });
         }
+        // Don't auto-redirect from /dashboard when length === 1.
+        // The user navigated here on purpose — they want to see the
+        // list (to create another workspace, switch, or just look).
+        // The first-login post-auth flow lives on HomePage / and is
+        // free to be smarter about destination.
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -83,8 +85,32 @@ export function DashboardPage() {
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8">
+        {deletedFlash && (
+          <div className="mb-4 bg-emerald-50/60 border border-emerald-200 rounded-md p-3 flex items-center justify-between gap-3">
+            <p className="text-sm text-emerald-900 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span>
+                Workspace{" "}
+                <span className="font-medium">{deletedFlash}</span>{" "}
+                deleted. All collections, entries, agent keys, and
+                audit records were removed.
+              </span>
+            </p>
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                params.delete("deleted");
+                setSearchParams(params, { replace: true });
+              }}
+              className="text-emerald-700/70 hover:text-emerald-900 text-base leading-none shrink-0"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+          </div>
+        )}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
             {error}
           </div>
         )}
