@@ -16,6 +16,7 @@
    - `apps/api/src/db/migrations/005_connected_sources.sql`
    - `apps/api/src/db/migrations/006_agent_key_lastfour.sql`
    - `apps/api/src/db/migrations/007_member_role.sql`
+   - `apps/api/src/db/migrations/008_attribution_fk_cleanup.sql`
 5. Enable **Realtime** for the `entries` table:
    - Go to **Database → Replication**
    - Ensure the `entries` table is enabled for realtime
