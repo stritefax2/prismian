@@ -1,4 +1,4 @@
-# Deploying TeamMem
+# Deploying Prismian
 
 ## 1. Supabase (Database + Auth + Realtime)
 
@@ -20,12 +20,12 @@
    - Ensure the `entries` table is enabled for realtime
 6. **Configure Auth** (Authentication → Providers):
    - Email/password is on by default. Recommended: leave **Confirm email** enabled so new signups must verify their address before accessing a workspace.
-   - To enable social login, flip on **Google** and/or **GitHub** and paste the OAuth client IDs. TeamMem's register and login pages automatically show the buttons when providers are configured.
-   - **Site URL** (Authentication → URL Configuration) must be set to your production web app URL (e.g. `https://app.teammem.dev`). Add `https://app.teammem.dev/reset-password` to the **Redirect URLs** list so password-reset emails land on the right page.
+   - To enable social login, flip on **Google** and/or **GitHub** and paste the OAuth client IDs. Prismian's register and login pages automatically show the buttons when providers are configured.
+   - **Site URL** (Authentication → URL Configuration) must be set to your production web app URL (e.g. `https://app.prismian.dev`). Add `https://app.prismian.dev/reset-password` to the **Redirect URLs** list so password-reset emails land on the right page.
 
 ## 2. Generate the connector encryption key
 
-TeamMem encrypts all connected-database credentials (connection strings) at rest using `CONNECTOR_ENCRYPTION_KEY`. Generate one:
+Prismian encrypts all connected-database credentials (connection strings) at rest using `CONNECTOR_ENCRYPTION_KEY`. Generate one:
 
 ```bash
 openssl rand -base64 32
@@ -57,8 +57,8 @@ Skip this step if you're deploying to Railway / Fly / Render / a VPS — the in-
    - `OPENAI_API_KEY` = your OpenAI key (optional, enables semantic search)
    - `CONNECTOR_ENCRYPTION_KEY` = output of `openssl rand -base64 32`
    - `CRON_SECRET` = output of `openssl rand -hex 32`
-   - `ALLOWED_ORIGINS` = comma-separated list of web-app origins (e.g. `https://app.teammem.dev`). **Required in production** — browser requests from any other origin will be rejected.
-   - `WEB_URL` = your public web app URL (e.g. `https://app.teammem.dev`). **Required in production** — used as the redirect target in invite emails. If missing, invite links point at localhost.
+   - `ALLOWED_ORIGINS` = comma-separated list of web-app origins (e.g. `https://app.prismian.dev`). **Required in production** — browser requests from any other origin will be rejected.
+   - `WEB_URL` = your public web app URL (e.g. `https://app.prismian.dev`). **Required in production** — used as the redirect target in invite emails. If missing, invite links point at localhost.
 5. Deploy.
 6. **Add a Vercel Cron job** to drive syncs. In the root of `apps/api`, create `vercel.json`:
 
@@ -90,7 +90,7 @@ Skip this step if you're deploying to Railway / Fly / Render / a VPS — the in-
 4. Add environment variables:
    - `VITE_SUPABASE_URL` = your project URL
    - `VITE_SUPABASE_ANON_KEY` = your anon key
-   - `VITE_API_URL` = your deployed API URL (e.g. `https://teammem-api.vercel.app`)
+   - `VITE_API_URL` = your deployed API URL (e.g. `https://prismian-api.vercel.app`)
 5. Deploy.
 
 ## 6. MCP Server
@@ -101,13 +101,13 @@ The MCP server runs locally on each teammate's machine. Users generate an agent 
 // Claude Desktop / Cursor config
 {
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {
-        "TEAMMEM_API_KEY": "tm_sk_...",
-        "TEAMMEM_WORKSPACE": "workspace-uuid",
-        "TEAMMEM_API_URL": "https://teammem-api.vercel.app"
+        "PRISMIAN_API_KEY": "pr_sk_...",
+        "PRISMIAN_WORKSPACE": "workspace-uuid",
+        "PRISMIAN_API_URL": "https://prismian-api.vercel.app"
       }
     }
   }
@@ -121,7 +121,7 @@ The Settings page pre-fills the full JSON config for each tool (Claude Desktop, 
 | Layer | What protects it |
 | --- | --- |
 | User auth | Supabase Auth (bcrypt passwords, JWT sessions, OAuth via Google/GitHub, email verification, rate-limited login endpoints). |
-| API auth | Bearer tokens required on every route. Supabase JWTs for humans, `tm_sk_`-prefixed keys for agents. |
+| API auth | Bearer tokens required on every route. Supabase JWTs for humans, `pr_sk_`-prefixed keys for agents. |
 | Agent keys | 32 bytes of random, SHA-256 hashed at rest, raw key shown exactly once at creation. Last 4 characters stored for visual identification only. Revocable at any time. |
 | Connection strings | AES-256-GCM encrypted using `CONNECTOR_ENCRYPTION_KEY`, never returned to the client in plaintext. |
 | Workspace isolation | Middleware on every route resolves the target workspace and verifies caller membership. Belt: Postgres RLS policies on workspaces, collections, entries, data_sources. |
@@ -137,12 +137,12 @@ Threat model non-goals for v1: multi-region replication, key rotation UX (the CO
 
 Connected collections are **cached copies**, not live passthroughs:
 
-- On sync, TeamMem reads the selected columns from your source DB (via the encrypted connection string) and inserts them into our own `entries` table as JSONB.
+- On sync, Prismian reads the selected columns from your source DB (via the encrypted connection string) and inserts them into our own `entries` table as JSONB.
 - Agents query OUR database (with permissions, redaction, audit), never yours.
 - Sync runs every 15 minutes (configurable via `SYNC_INTERVAL_MS`) or on manual "Sync now."
 - Source DB credentials never leave the API layer; they're AES-GCM encrypted using `CONNECTOR_ENCRYPTION_KEY`.
 
-This keeps load off your prod DB, enables column redaction before data leaves TeamMem, and lets us embed content for semantic search. The tradeoff is 15-minute staleness, which is acceptable for the "AI access layer" use case (decisions, customers, orders — not real-time dashboards).
+This keeps load off your prod DB, enables column redaction before data leaves Prismian, and lets us embed content for semantic search. The tradeoff is 15-minute staleness, which is acceptable for the "AI access layer" use case (decisions, customers, orders — not real-time dashboards).
 
 ## Local Development
 

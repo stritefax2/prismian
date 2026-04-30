@@ -1,4 +1,4 @@
-# TeamMem
+# Prismian
 
 Persistent, permissioned knowledge base for teams and their AI tools.
 
@@ -37,7 +37,7 @@ See DEPLOY.md for production deployment steps.
 ## Key Patterns
 
 - Auth: Supabase handles registration/login/sessions. API verifies tokens via `supabase.auth.getUser(token)`. Users are upserted into our `users` table on first API call.
-- Agent keys (`tm_sk_` prefix) bypass Supabase auth — validated directly against `agent_keys` table
+- Agent keys (`pr_sk_` prefix) bypass Supabase auth — validated directly against `agent_keys` table
 - Agent permissions enforced at every route: collection-level, field-level, rate limits, delete protection
 - Embeddings generated async via `embedding_jobs` polling queue — never blocks writes
 - Entry updates use optimistic locking with automatic three-way field-level merge
@@ -76,7 +76,7 @@ GET    /api/v1/audit/:workspaceId
 
 7 tools: `search`, `read_entry`, `write_entry`, `update_entry`, `list_collections`, `query_structured`, `workspace_info`
 
-Transports: stdio (local `npx teammem-mcp`) and SSE (remote HTTP)
+Transports: stdio (local `npx prismian-mcp`) and SSE (remote HTTP)
 
 ## Testing
 
@@ -99,4 +99,4 @@ pnpm run test:api     # integration tests (needs Postgres)
 
 ### API: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `OPENAI_API_KEY` (optional)
 ### Web: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
-### MCP: `TEAMMEM_API_KEY`, `TEAMMEM_WORKSPACE`, `TEAMMEM_API_URL`
+### MCP: `PRISMIAN_API_KEY`, `PRISMIAN_WORKSPACE`, `PRISMIAN_API_URL`

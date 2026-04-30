@@ -240,7 +240,7 @@ export function OnboardingPage() {
                 Connect your data
               </h2>
               <p className="text-sm text-gray-500 mb-6">
-                Point TeamMem at a Postgres database (Supabase, Neon, RDS, or
+                Point Prismian at a Postgres database (Supabase, Neon, RDS, or
                 plain Postgres). We'll introspect the schema so you can pick
                 which tables and columns your agents can read. Read-only,
                 encrypted, always.

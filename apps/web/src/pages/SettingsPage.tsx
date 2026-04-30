@@ -830,7 +830,7 @@ export function SettingsPage() {
                       </span>{" "}
                       under it. Connected source databases are{" "}
                       <span className="font-medium text-gray-900">not</span>{" "}
-                      touched — only TeamMem's mirror of them. This cannot
+                      touched — only Prismian's mirror of them. This cannot
                       be undone.
                     </p>
                   </div>
@@ -1148,7 +1148,7 @@ export function SettingsPage() {
                               className="text-[11px] font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded"
                               title="Last 4 characters of this key — use to identify which tool is using it"
                             >
-                              tm_sk_••••{key.last_four}
+                              pr_sk_••••{key.last_four}
                             </code>
                           )}
                           {usedRecently && (

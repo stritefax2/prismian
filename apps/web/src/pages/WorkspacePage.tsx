@@ -5,7 +5,7 @@ import { apiFetch } from "../lib/api.js";
 import { AppShell } from "../components/AppShell.js";
 import { ActivityFeed } from "../components/ActivityFeed.js";
 import { useWorkspaceSocket } from "../lib/ws.js";
-import type { ChangeEvent } from "@teammem/shared";
+import type { ChangeEvent } from "@prismian/shared";
 
 interface Workspace {
   id: string;

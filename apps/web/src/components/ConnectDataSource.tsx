@@ -27,12 +27,12 @@ interface PrivilegeError {
 // fail and know to swap it. Beats leaving an obvious placeholder.
 const ROLE_SQL = `-- Run in your DB's SQL editor, then use the password below
 -- in the connection string. On Supabase: Dashboard → SQL Editor.
-CREATE ROLE teammem_readonly WITH LOGIN PASSWORD 'change-me';
-GRANT CONNECT ON DATABASE postgres TO teammem_readonly;
-GRANT USAGE ON SCHEMA public TO teammem_readonly;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO teammem_readonly;
+CREATE ROLE prismian_readonly WITH LOGIN PASSWORD 'change-me';
+GRANT CONNECT ON DATABASE postgres TO prismian_readonly;
+GRANT USAGE ON SCHEMA public TO prismian_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO prismian_readonly;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT ON TABLES TO teammem_readonly;`;
+  GRANT SELECT ON TABLES TO prismian_readonly;`;
 
 export function ConnectDataSource({
   workspaceId,
@@ -189,7 +189,7 @@ export function ConnectDataSource({
                 That role has too many privileges.
               </p>
               <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                TeamMem refuses to connect as a superuser or a role that can
+                Prismian refuses to connect as a superuser or a role that can
                 create accounts or bypass RLS. Provision a dedicated
                 read-only role (SQL below) and use its credentials instead.
               </p>
@@ -307,7 +307,7 @@ export function ConnectDataSource({
               onChange={(e) => setConnectionString(e.target.value)}
               required
               rows={3}
-              placeholder="postgres://teammem_readonly:password@db.example.com:5432/prod?sslmode=require"
+              placeholder="postgres://prismian_readonly:password@db.example.com:5432/prod?sslmode=require"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-gray-900 focus:ring-1 focus:ring-gray-900 outline-none resize-y"
             />
             <span className="block mt-1 text-xs text-gray-500 leading-relaxed">
@@ -342,7 +342,7 @@ export function ConnectDataSource({
                   <li>
                     Swap in the password for the{" "}
                     <code className="bg-white border border-gray-200 px-1 rounded font-mono">
-                      teammem_readonly
+                      prismian_readonly
                     </code>{" "}
                     role you created above
                   </li>

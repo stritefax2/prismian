@@ -33,7 +33,7 @@ export function NewKeyPanel({
   // copies, pastes into Slack DM / 1Password / Signal / wherever they
   // share secrets in their own org.
   function copyShareMessage() {
-    const message = `Here's a TeamMem agent key for our workspace.
+    const message = `Here's a Prismian agent key for our workspace.
 
 It gives an MCP-compatible AI tool (Claude Desktop, Cursor, etc.) scoped, audited access to the data we've connected. Treat it like a password — don't share in public channels.
 
@@ -46,7 +46,7 @@ Setup for Claude Desktop:
 
 ${config}
 
-3. Restart Claude Desktop. The "teammem" tool should now be available.
+3. Restart Claude Desktop. The "prismian" MCP server should now be available.
 
 If you need to revoke or change the key's scope, ping me and I'll do it from the workspace settings.`;
 
@@ -57,15 +57,15 @@ If you need to revoke or change the key's scope, ping me and I'll do it from the
 
   const config = `{
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {
-        "TEAMMEM_API_KEY": "${rawKey}",
-        "TEAMMEM_WORKSPACE": "${workspaceId}"${
+        "PRISMIAN_API_KEY": "${rawKey}",
+        "PRISMIAN_WORKSPACE": "${workspaceId}"${
           API_URL_FOR_AGENTS
             ? `,
-        "TEAMMEM_API_URL": "${API_URL_FOR_AGENTS}"`
+        "PRISMIAN_API_URL": "${API_URL_FOR_AGENTS}"`
             : ""
         }
       }
@@ -203,7 +203,7 @@ If you need to revoke or change the key's scope, ping me and I'll do it from the
                 <span className="text-gray-400 font-mono mr-1.5">3.</span>
                 Open Cursor → Settings → MCP — verify{" "}
                 <code className="bg-gray-100 px-1 rounded text-gray-800 font-mono">
-                  teammem
+                  prismian
                 </code>{" "}
                 shows as connected
               </li>
@@ -242,16 +242,16 @@ If you need to revoke or change the key's scope, ping me and I'll do it from the
               </div>
               <div className="px-3 py-3 space-y-1 text-[12px] font-mono">
                 <div>
-                  <span className="text-gray-500">TEAMMEM_API_KEY=</span>
+                  <span className="text-gray-500">PRISMIAN_API_KEY=</span>
                   <span className="text-emerald-300 break-all">{rawKey}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">TEAMMEM_WORKSPACE=</span>
+                  <span className="text-gray-500">PRISMIAN_WORKSPACE=</span>
                   <span className="text-gray-300 break-all">{workspaceId}</span>
                 </div>
                 {API_URL_FOR_AGENTS && (
                   <div>
-                    <span className="text-gray-500">TEAMMEM_API_URL=</span>
+                    <span className="text-gray-500">PRISMIAN_API_URL=</span>
                     <span className="text-gray-300 break-all">
                       {API_URL_FOR_AGENTS}
                     </span>

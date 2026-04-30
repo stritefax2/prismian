@@ -1,6 +1,6 @@
-# teammem-mcp
+# prismian-mcp
 
-MCP server for [TeamMem](https://teammem.dev) — connect Claude, Cursor, ChatGPT, or any MCP-compatible AI tool to your team's persistent, permissioned knowledge base.
+MCP server for [Prismian](https://prismian.dev) — connect Claude, Cursor, ChatGPT, or any MCP-compatible AI tool to your team's permissioned data sources, scoped, audited, and column-redacted.
 
 ## Quick Setup
 
@@ -16,13 +16,13 @@ MCP server for [TeamMem](https://teammem.dev) — connect Claude, Cursor, ChatGP
 ```json
 {
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {
-        "TEAMMEM_API_KEY": "tm_sk_your_key_here",
-        "TEAMMEM_WORKSPACE": "your-workspace-id",
-        "TEAMMEM_API_URL": "https://your-api.vercel.app"
+        "PRISMIAN_API_KEY": "pr_sk_your_key_here",
+        "PRISMIAN_WORKSPACE": "your-workspace-id",
+        "PRISMIAN_API_URL": "https://your-api.vercel.app"
       }
     }
   }
@@ -34,13 +34,13 @@ MCP server for [TeamMem](https://teammem.dev) — connect Claude, Cursor, ChatGP
 ```json
 {
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {
-        "TEAMMEM_API_KEY": "tm_sk_your_key_here",
-        "TEAMMEM_WORKSPACE": "your-workspace-id",
-        "TEAMMEM_API_URL": "https://your-api.vercel.app"
+        "PRISMIAN_API_KEY": "pr_sk_your_key_here",
+        "PRISMIAN_WORKSPACE": "your-workspace-id",
+        "PRISMIAN_API_URL": "https://your-api.vercel.app"
       }
     }
   }
@@ -66,16 +66,16 @@ Your AI tool now has access to these tools:
 
 | Variable | Required | Description |
 |---|---|---|
-| `TEAMMEM_API_KEY` | Yes | Agent API key (starts with `tm_sk_`) |
-| `TEAMMEM_WORKSPACE` | Yes | Workspace UUID |
-| `TEAMMEM_API_URL` | No | API base URL (default: `http://localhost:3001`) |
+| `PRISMIAN_API_KEY` | Yes | Agent API key (starts with `pr_sk_`) |
+| `PRISMIAN_WORKSPACE` | Yes | Workspace UUID |
+| `PRISMIAN_API_URL` | No | API base URL (default: `http://localhost:3001`) |
 
 ## SSE Transport (Remote)
 
 For remote connections without running a local process:
 
 ```
-teammem-mcp-sse
+prismian-mcp-sse
 ```
 
 Or configure your MCP client to connect via SSE:
@@ -83,11 +83,11 @@ Or configure your MCP client to connect via SSE:
 ```json
 {
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "transport": "sse",
       "url": "https://your-mcp-server.com/sse",
       "headers": {
-        "Authorization": "Bearer tm_sk_your_key_here"
+        "Authorization": "Bearer pr_sk_your_key_here"
       }
     }
   }

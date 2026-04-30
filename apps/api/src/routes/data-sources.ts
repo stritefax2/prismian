@@ -18,7 +18,7 @@ import { logAction } from "../services/audit.js";
 
 // Map common Postgres connection failures to a plain-English hint so the
 // modal can show "wrong password" instead of just "password authentication
-// failed for user 'teammem_readonly'". The detail is still returned for
+// failed for user 'prismian_readonly'". The detail is still returned for
 // users who want the raw driver message.
 function describeConnectionFailure(e: unknown, detail: string): string | null {
   const code = (e as { code?: string }).code;

@@ -5,13 +5,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: teammem
-      POSTGRES_PASSWORD: teammem
-      POSTGRES_DB: teammem
+      POSTGRES_USER: prismian
+      POSTGRES_PASSWORD: prismian
+      POSTGRES_DB: prismian
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U teammem"]
+      test: ["CMD-SHELL", "pg_isready -U prismian"]
       interval: 5s
       timeout: 5s
       retries: 5

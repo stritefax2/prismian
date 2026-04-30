@@ -69,7 +69,7 @@ export function AppShell({
               to="/dashboard"
               className="font-bold text-gray-900 hover:text-gray-900 transition-colors"
             >
-              TeamMem
+              Prismian
             </Link>
             {breadcrumbs?.map((crumb, i) => (
               <span key={i} className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export function AppShell({
               </Link>
             )}
             <a
-              href="https://github.com/stritefax2/teammem#readme"
+              href="https://github.com/stritefax2/prismian#readme"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-500 hover:text-gray-700 hidden sm:inline"

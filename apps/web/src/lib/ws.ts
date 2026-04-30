@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { supabase } from "./supabase.js";
-import type { ChangeEvent } from "@teammem/shared";
+import type { ChangeEvent } from "@prismian/shared";
 
 export function useWorkspaceSocket(
   workspaceId: string | undefined,

@@ -15,7 +15,7 @@ export function hashApiKey(key: string): string {
 }
 
 export function generateApiKey(): string {
-  return `tm_sk_${crypto.randomBytes(32).toString("hex")}`;
+  return `pr_sk_${crypto.randomBytes(32).toString("hex")}`;
 }
 
 export const authMiddleware = createMiddleware<{
@@ -29,7 +29,7 @@ export const authMiddleware = createMiddleware<{
   const token = header.replace("Bearer ", "");
 
   // Agent API key
-  if (token.startsWith("tm_sk_")) {
+  if (token.startsWith("pr_sk_")) {
     const keyHash = hashApiKey(token);
     const result = await query(
       `UPDATE agent_keys SET last_used_at = now()

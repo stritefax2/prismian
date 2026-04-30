@@ -8,7 +8,7 @@
  *   4. Agent queries the entries
  *   5. Field-level redaction removes denied columns
  *   6. Re-sync with changes updates rows, unchanged rows skip
- *   7. Deleted source rows disappear from TeamMem
+ *   7. Deleted source rows disappear from Prismian
  *
  * This is the smoke test that catches wire-level bugs between modules.
  * Run it before every deploy. Exits non-zero on failure so it's CI-friendly.
@@ -33,7 +33,7 @@ const SOURCE_TABLE = "smoke_source_customers";
 const TEST_USER_EMAIL = `smoke-${Date.now()}@example.com`;
 const CONNECTION_STRING =
   process.env.DATABASE_URL ||
-  "postgresql://teammem:teammem@localhost:5432/teammem";
+  "postgresql://prismian:prismian@localhost:5432/prismian";
 
 let pass = 0;
 let fail = 0;

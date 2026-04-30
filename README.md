@@ -1,6 +1,6 @@
 <div align="center">
 
-# TeamMem
+# Prismian
 
 **AI-safe access to your team's data, over MCP.**
 
@@ -8,7 +8,7 @@ Connect Postgres once. Claude, Cursor, ChatGPT, and every other
 MCP-compatible AI tool on your team gets scoped, audited, column-level
 redacted read access. No pasting schemas into chat. No shared prod passwords.
 
-[Try it free](https://app.teammem.dev) ·
+[Try it free](https://app.prismian.dev) ·
 [Data handling](./DATA_HANDLING.md) ·
 [Self-host](./DEPLOY.md) ·
 [Contributing](./CONTRIBUTING.md)
@@ -19,9 +19,9 @@ redacted read access. No pasting schemas into chat. No shared prod passwords.
 
 ## What this is
 
-TeamMem is an open-source **access layer** for your team's data in the age of AI
+Prismian is an open-source **access layer** for your team's data in the age of AI
 agents. You connect a data source once (currently Postgres; Google Sheets and
-Notion next). TeamMem mirrors the tables and columns you pick into a
+Notion next). Prismian mirrors the tables and columns you pick into a
 permissioned workspace that every AI tool on your team can query over the
 [Model Context Protocol](https://modelcontextprotocol.io/).
 
@@ -41,7 +41,7 @@ audit trail.
 
 ## Why not just...
 
-| Alternative | Why TeamMem exists |
+| Alternative | Why Prismian exists |
 | --- | --- |
 | Plain Postgres MCP server | Single-user, no team layer, no column redaction, no audit, same credentials shared across tools. |
 | Supabase's / Neon's official MCP | Single vendor only, no workspace/member model, no per-agent ACLs. |
@@ -59,7 +59,7 @@ audit trail.
                   │ scheduled mirror (15 min)
                   ▼
        ┌─────────────────────┐        ┌─────────────────────┐
-       │  TeamMem API        │◀──────▶│  Postgres + pgvector│
+       │  Prismian API        │◀──────▶│  Postgres + pgvector│
        │  (Hono + Node)      │        │  (mirror + native + │
        └───┬──────────┬──────┘        │  audit log)         │
            │          │               └─────────────────────┘
@@ -83,7 +83,7 @@ applies column redaction and audit before any byte leaves the API.
 | --- | --- |
 | `apps/api` | Hono API server — auth, routes, connectors, sync, admin cron. |
 | `apps/web` | React + Vite web app — onboarding, workspace UI, settings. |
-| `apps/mcp-server` | MCP client published as `teammem-mcp` — what each AI tool runs. |
+| `apps/mcp-server` | MCP client published as `prismian-mcp` — what each AI tool runs. |
 | `packages/shared` | Zod schemas + shared types between apps. |
 | `DEPLOY.md` | Full deployment guide (Supabase, Vercel / Railway, SMTP). |
 | `LAUNCH.md` | Pre-launch checklist: smoke test, env vars, curls to verify. |
@@ -111,8 +111,8 @@ Prereqs: Node 20+, pnpm, Docker (for local Postgres), and a Supabase
 project (free tier works) for auth + realtime.
 
 ```bash
-git clone https://github.com/stritefax2/teammem.git
-cd teammem
+git clone https://github.com/stritefax2/prismian.git
+cd prismian
 pnpm install
 
 # Local Postgres via docker-compose
@@ -145,20 +145,20 @@ pnpm run smoke
 
 ## MCP client — for your AI tool
 
-Any MCP-compatible tool connects with the `teammem-mcp` package. Once you
+Any MCP-compatible tool connects with the `prismian-mcp` package. Once you
 generate an agent key in Settings → Agent Keys, paste this into your
 tool's MCP config:
 
 ```jsonc
 {
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {
-        "TEAMMEM_API_KEY": "tm_sk_...",
-        "TEAMMEM_WORKSPACE": "your-workspace-uuid",
-        "TEAMMEM_API_URL": "https://your-api.example.com"
+        "PRISMIAN_API_KEY": "pr_sk_...",
+        "PRISMIAN_WORKSPACE": "your-workspace-uuid",
+        "PRISMIAN_API_URL": "https://your-api.example.com"
       }
     }
   }
@@ -173,7 +173,7 @@ client.
 - **Postgres** connector — beta, covers Supabase / Neon / RDS / plain Postgres.
 - **Google Sheets**, **Notion** — next.
 - **Linear**, **Airtable**, **MySQL**, **BigQuery** — planned.
-- **Wrapping third-party MCP servers** with TeamMem's identity and audit
+- **Wrapping third-party MCP servers** with Prismian's identity and audit
   layer — planned, lets you add a new source whenever a vendor ships their
   own MCP.
 
@@ -185,7 +185,7 @@ security-minded reviewers read first. Deployment-level knobs are
 covered in [DEPLOY.md](./DEPLOY.md#security-model-quick-reference).
 Highlights:
 
-- Scoped agent keys (32-byte random, SHA-256 hashed, `tm_sk_` prefix).
+- Scoped agent keys (32-byte random, SHA-256 hashed, `pr_sk_` prefix).
 - Field-level redaction applied before data leaves the API.
 - Structural write-lock on connected collections — `POST` / `PUT` / `DELETE`
   reject with `409 read_only_source` regardless of caller permissions.
@@ -213,8 +213,8 @@ Good first issues:
 
 ## Hosted
 
-TeamMem runs as a hosted app at
-[app.teammem.dev](https://app.teammem.dev) — free while in private beta
+Prismian runs as a hosted app at
+[app.prismian.dev](https://app.prismian.dev) — free while in private beta
 with a small group of design partners. Sign up, connect your Postgres,
 generate a scoped agent key, and paste the config into Cursor or
 Claude. That's the install.

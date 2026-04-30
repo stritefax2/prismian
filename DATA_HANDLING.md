@@ -1,12 +1,12 @@
 # Data handling
 
-The short version of what TeamMem reads, stores, logs, and — most
-importantly — what it does not touch. If you're evaluating TeamMem for
+The short version of what Prismian reads, stores, logs, and — most
+importantly — what it does not touch. If you're evaluating Prismian for
 your team, this is the page to read first.
 
 ## What leaves your database
 
-When you connect a Postgres source, TeamMem runs exactly three kinds of
+When you connect a Postgres source, Prismian runs exactly three kinds of
 query against it:
 
 1. **`SELECT 1`** on connect, to confirm the connection works.
@@ -28,27 +28,27 @@ database-wide scans, no writes, no DDL, no event triggers, no
 
 Per-sync row ceiling is `CONNECTOR_MAX_ROWS` (default 10,000). Queries
 run with `statement_timeout` set at the connection level (10s for
-introspect, 60s for sync), so a runaway TeamMem sync can't wedge your
+introspect, 60s for sync), so a runaway Prismian sync can't wedge your
 database.
 
 **Strongly recommended**: provision a dedicated read-only role. The
 connector UI prints the exact SQL, but it's:
 
 ```sql
-CREATE ROLE teammem_readonly WITH LOGIN PASSWORD '...';
-GRANT CONNECT ON DATABASE your_db TO teammem_readonly;
-GRANT USAGE ON SCHEMA public TO teammem_readonly;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO teammem_readonly;
+CREATE ROLE prismian_readonly WITH LOGIN PASSWORD '...';
+GRANT CONNECT ON DATABASE your_db TO prismian_readonly;
+GRANT USAGE ON SCHEMA public TO prismian_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO prismian_readonly;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT ON TABLES TO teammem_readonly;
+  GRANT SELECT ON TABLES TO prismian_readonly;
 ```
 
 The connector rejects superuser, `CREATEROLE`, `CREATEDB`, and
 `BYPASSRLS` roles on both initial connect and every subsequent sync.
 
-## What TeamMem stores
+## What Prismian stores
 
-In TeamMem's own Postgres database:
+In Prismian's own Postgres database:
 
 - **Synced rows**, one row per source row, into an `entries` table as
   JSONB. Only the columns you selected when you created the collection
@@ -66,9 +66,9 @@ In TeamMem's own Postgres database:
   agents can use semantic search. If you don't want any data leaving
   for embeddings, leave `OPENAI_API_KEY` unset and search falls back to
   Postgres full-text. No content is ever sent to OpenAI for chat
-  completion — TeamMem doesn't run an LLM.
+  completion — Prismian doesn't run an LLM.
 
-## What leaves TeamMem
+## What leaves Prismian
 
 For an agent query over MCP: the rows your agent key is allowed to
 read, with denied fields stripped out on the server before the
@@ -96,7 +96,7 @@ Every read, write, and admin action by a user or an agent key goes into
 - optional JSON metadata
 
 You can query this log via `GET /api/v1/audit/:workspaceId` or read the
-table directly. There is no hidden telemetry. TeamMem does not call
+table directly. There is no hidden telemetry. Prismian does not call
 home.
 
 ## Rate and volume limits
@@ -130,10 +130,10 @@ Three ways, each takes about one click:
    the workspace is cascaded: collections, entries, agent keys, audit
    log, versions, data sources. Your source DB is untouched.
 
-## What TeamMem is _not_
+## What Prismian is _not_
 
 - Not a write path back to your source database. Ever.
-- Not a query passthrough. Agent queries hit TeamMem's mirror, not
+- Not a query passthrough. Agent queries hit Prismian's mirror, not
   yours.
 - Not a replication tool — 15-minute sync, not real-time CDC.
 - Not a data warehouse. Row caps are deliberate.
@@ -142,7 +142,7 @@ Three ways, each takes about one click:
 
 ## Hosted vs self-host
 
-If you're on TeamMem Cloud:
+If you're on Prismian Cloud:
 
 - We run the API and the web app on Vercel and the Postgres + auth on
   Supabase. Data residency: US (Supabase project in us-east-1). Happy
@@ -159,10 +159,10 @@ covers setup. You own the encryption key. You own the DB.
 
 ## Questions worth asking
 
-If a security-minded teammate is reviewing TeamMem, these are the
+If a security-minded teammate is reviewing Prismian, these are the
 answers they're probably after:
 
-- **"Can TeamMem write to our prod DB?"** No. The connection is opened
+- **"Can Prismian write to our prod DB?"** No. The connection is opened
   via `pg.Pool`, but the only SQL the connector ever issues is `SELECT`.
   There is no `INSERT` / `UPDATE` / `DELETE` / DDL anywhere in
   `apps/api/src/services/connectors/postgres.ts`.
@@ -172,12 +172,12 @@ answers they're probably after:
   structured query, aggregate — goes through the same function.
 - **"Can I prove which agent read which row?"** Yes. Every agent read
   writes an `audit_log` row with the agent key id and the entry id.
-- **"What happens if TeamMem goes down?"** Your source DB is
+- **"What happens if Prismian goes down?"** Your source DB is
   unaffected. Agents return errors on their MCP calls. Nothing in your
-  infra depends on TeamMem being up.
+  infra depends on Prismian being up.
 - **"Can I rotate the encryption key?"** On self-host, yes — but you
   have to re-encrypt `data_sources.encrypted_config` manually (no
-  built-in rotation UI yet). On TeamMem Cloud we do this for you.
+  built-in rotation UI yet). On Prismian Cloud we do this for you.
 
 Anything else, open an issue or email us — we'd rather answer once in
 writing than wave at the question.

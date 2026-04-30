@@ -1,5 +1,5 @@
 -- Store the last 4 characters of the raw agent key so the UI can display
--- `tm_sk_••••xxxx` identifiers — matches the Stripe/GitHub pattern and
+-- `pr_sk_••••xxxx` identifiers — matches the Stripe/GitHub pattern and
 -- lets users distinguish keys at a glance after creation.
 --
 -- The last 4 characters of a 32-byte hex key give us ~65k-way ambiguity,

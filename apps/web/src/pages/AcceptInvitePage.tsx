@@ -88,17 +88,17 @@ function buildMcpConfig(
   apiUrl: string
 ): string {
   const envBlock: string[] = [
-    `        "TEAMMEM_API_KEY": "${apiKey}"`,
-    `        "TEAMMEM_WORKSPACE": "${workspaceId}"`,
+    `        "PRISMIAN_API_KEY": "${apiKey}"`,
+    `        "PRISMIAN_WORKSPACE": "${workspaceId}"`,
   ];
   if (apiUrl && !apiUrl.includes("localhost")) {
-    envBlock.push(`        "TEAMMEM_API_URL": "${apiUrl}"`);
+    envBlock.push(`        "PRISMIAN_API_URL": "${apiUrl}"`);
   }
   return `{
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {
 ${envBlock.join(",\n")}
       }
@@ -234,7 +234,7 @@ export function AcceptInvitePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">TeamMem</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Prismian</h1>
           <p className="text-sm text-gray-500 mb-6">
             You've been invited to a shared workspace. Sign in or create an
             account to join.
@@ -272,7 +272,7 @@ export function AcceptInvitePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-900 mb-3">TeamMem</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">Prismian</h1>
           <p className="text-sm text-red-600 mb-4">{error}</p>
           <Link
             to="/dashboard"
@@ -543,7 +543,7 @@ export function AcceptInvitePage() {
                       </li>
                       <li>Paste the config above and save</li>
                       <li>
-                        Cursor → Settings → MCP → verify "teammem" is
+                        Cursor → Settings → MCP → verify "prismian" is
                         connected
                       </li>
                     </ol>
@@ -556,17 +556,17 @@ export function AcceptInvitePage() {
                       </p>
                       <div className="space-y-0.5 font-mono text-[11px]">
                         <div>
-                          <span className="text-gray-500">TEAMMEM_API_KEY=</span>
+                          <span className="text-gray-500">PRISMIAN_API_KEY=</span>
                           <span className="text-green-700">{rawKey}</span>
                         </div>
                         <div>
                           <span className="text-gray-500">
-                            TEAMMEM_WORKSPACE=
+                            PRISMIAN_WORKSPACE=
                           </span>
                           <span className="text-gray-900">{workspaceId}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">TEAMMEM_API_URL=</span>
+                          <span className="text-gray-500">PRISMIAN_API_URL=</span>
                           <span className="text-gray-700">{apiUrl}</span>
                         </div>
                       </div>

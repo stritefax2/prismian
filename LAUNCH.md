@@ -14,7 +14,7 @@ docker compose up -d postgres
 cd apps/api
 cp .env.example .env
 # At minimum, set:
-#   DATABASE_URL=postgresql://teammem:teammem@localhost:5432/teammem
+#   DATABASE_URL=postgresql://prismian:prismian@localhost:5432/prismian
 #   CONNECTOR_ENCRYPTION_KEY=$(openssl rand -base64 32)
 
 # 3. Apply all migrations.
@@ -71,7 +71,7 @@ Open http://localhost:5173 and verify, in order:
 - [ ] Click "Connect your database — free" → register page with social + email.
 - [ ] Register with a test email + password.
 - [ ] Land in onboarding step 1, name a workspace, continue.
-- [ ] Step 2: click "Connect Postgres." Modal opens. Paste a local connection string (e.g. `postgresql://teammem:teammem@localhost:5432/teammem`). Click Connect.
+- [ ] Step 2: click "Connect Postgres." Modal opens. Paste a local connection string (e.g. `postgresql://prismian:prismian@localhost:5432/prismian`). Click Connect.
 - [ ] The collection setup flow opens. You see tables from the local DB. Pick one, pick columns, pick a content column, click Create & sync.
 - [ ] You're advanced to step 3 (native collection templates). Skip or pick some.
 - [ ] Step 4: "how it works" explainer. Click "Go to my workspace."
@@ -80,7 +80,7 @@ Open http://localhost:5173 and verify, in order:
 - [ ] Open an entry. Provenance header shows `synced from table · id=...`. No Edit/Delete buttons.
 - [ ] Settings → Data Sources: your connection is listed. Add another connected collection from the same source.
 - [ ] Settings → Agent Keys → New key. Try both "Full access" and "Scoped." In scoped mode, the column redaction UI appears for connected collections.
-- [ ] Create a scoped key. Copy the `tm_sk_` value.
+- [ ] Create a scoped key. Copy the `pr_sk_` value.
 - [ ] Settings → Members → invite a second test email. Confirm the invite appears in "Pending Invites."
 - [ ] Log out. Visit /forgot-password. Confirm the "we sent a link" message shows.
 - [ ] Log back in. Verify all workspace state persists.
@@ -135,24 +135,24 @@ After deploying, hit these from a terminal:
 
 ```bash
 # Health check should return 200
-curl -i https://api.teammem.dev/health
+curl -i https://api.prismian.dev/health
 
 # Admin health check should 401 without the secret
-curl -i https://api.teammem.dev/api/v1/admin/health
+curl -i https://api.prismian.dev/api/v1/admin/health
 
 # Admin health check with secret should return "configured" for both
-curl -i https://api.teammem.dev/api/v1/admin/health \
+curl -i https://api.prismian.dev/api/v1/admin/health \
   -H "x-cron-secret: $CRON_SECRET"
 
 # Trigger a sync tick manually (should return {checked, unstuck, results})
-curl -i -X POST https://api.teammem.dev/api/v1/admin/sync-due \
+curl -i -X POST https://api.prismian.dev/api/v1/admin/sync-due \
   -H "x-cron-secret: $CRON_SECRET"
 
 # Any /api/v1/* route without auth should 401
-curl -i https://api.teammem.dev/api/v1/workspaces
+curl -i https://api.prismian.dev/api/v1/workspaces
 
 # CORS rejection from an unknown origin
-curl -i https://api.teammem.dev/api/v1/workspaces \
+curl -i https://api.prismian.dev/api/v1/workspaces \
   -H "Origin: https://random-site.com"
 # → Access-Control-Allow-Origin should NOT be set
 ```

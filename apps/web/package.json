@@ -1,5 +1,5 @@
 {
-  "name": "@teammem/web",
+  "name": "@prismian/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",
-    "@teammem/shared": "workspace:*",
+    "@prismian/shared": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

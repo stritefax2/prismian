@@ -1,42 +1,42 @@
-const API_URL = process.env.TEAMMEM_API_URL || "http://localhost:3001";
-const API_KEY = process.env.TEAMMEM_API_KEY || "";
-const WORKSPACE_ID = process.env.TEAMMEM_WORKSPACE || "";
+const API_URL = process.env.PRISMIAN_API_URL || "http://localhost:3001";
+const API_KEY = process.env.PRISMIAN_API_KEY || "";
+const WORKSPACE_ID = process.env.PRISMIAN_WORKSPACE || "";
 
 export function validateConfig(): void {
   const errors: string[] = [];
 
   if (!API_KEY) {
     errors.push(
-      "TEAMMEM_API_KEY is not set. Generate one at: Your Workspace → Settings → Agent Keys"
+      "PRISMIAN_API_KEY is not set. Generate one at: Your Workspace → Settings → Agent Keys"
     );
   }
   if (!WORKSPACE_ID) {
     errors.push(
-      "TEAMMEM_WORKSPACE is not set. Find your workspace ID in the URL: /w/<workspace-id>"
+      "PRISMIAN_WORKSPACE is not set. Find your workspace ID in the URL: /w/<workspace-id>"
     );
   }
 
   if (errors.length > 0) {
     console.error("\n╔══════════════════════════════════════════════╗");
-    console.error("║         TeamMem MCP — Configuration Error     ║");
+    console.error("║         Prismian MCP — Configuration Error     ║");
     console.error("╚══════════════════════════════════════════════╝\n");
     for (const err of errors) {
       console.error(`  ✗ ${err}\n`);
     }
     console.error("Required environment variables:");
-    console.error("  TEAMMEM_API_KEY      — Agent API key (starts with tm_sk_)");
-    console.error("  TEAMMEM_WORKSPACE    — Workspace UUID");
-    console.error("  TEAMMEM_API_URL      — API base URL (optional, defaults to http://localhost:3001)\n");
+    console.error("  PRISMIAN_API_KEY     — Agent API key (starts with pr_sk_)");
+    console.error("  PRISMIAN_WORKSPACE   — Workspace UUID");
+    console.error("  PRISMIAN_API_URL     — API base URL (optional, defaults to http://localhost:3001)\n");
     console.error("Example MCP config:\n");
     console.error(`  {
     "mcpServers": {
-      "teammem": {
+      "prismian": {
         "command": "npx",
-        "args": ["-y", "teammem-mcp"],
+        "args": ["-y", "prismian-mcp"],
         "env": {
-          "TEAMMEM_API_KEY": "tm_sk_...",
-          "TEAMMEM_WORKSPACE": "your-workspace-id",
-          "TEAMMEM_API_URL": "https://your-api.vercel.app"
+          "PRISMIAN_API_KEY": "pr_sk_...",
+          "PRISMIAN_WORKSPACE": "your-workspace-id",
+          "PRISMIAN_API_URL": "https://your-api.vercel.app"
         }
       }
     }
@@ -64,7 +64,7 @@ async function request<T>(
     });
   } catch (e: any) {
     throw new Error(
-      `Cannot reach TeamMem API at ${API_URL}. Is the server running? (${e.message})`
+      `Cannot reach Prismian API at ${API_URL}. Is the server running? (${e.message})`
     );
   }
 
@@ -72,7 +72,7 @@ async function request<T>(
     const error = await res.text();
     if (res.status === 401) {
       throw new Error(
-        "Invalid API key. Check TEAMMEM_API_KEY or generate a new one at Settings → Agent Keys."
+        "Invalid API key. Check PRISMIAN_API_KEY or generate a new one at Settings → Agent Keys."
       );
     }
     if (res.status === 403) {

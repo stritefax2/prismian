@@ -1,8 +1,8 @@
-# Contributing to TeamMem
+# Contributing to Prismian
 
 Thanks for your interest — this project is better with you.
 
-TeamMem is early. That means:
+Prismian is early. That means:
 
 - **Bug reports are welcome.** The more specific, the better.
 - **Feature requests are welcome** via GitHub Issues. Tag them with what
@@ -15,7 +15,7 @@ TeamMem is early. That means:
 
 - Be kind. See [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
 - Security issues — please don't open a public issue. Email
-  `security@teammem.dev` (or if that bounces, reach out via GitHub's
+  `security@prismian.dev` (or if that bounces, reach out via GitHub's
   private vulnerability reporting on this repo).
 - Keep PRs focused. One change per PR. Big sweeping refactors are hard
   to review and hard to revert.
@@ -23,8 +23,8 @@ TeamMem is early. That means:
 ## Local setup
 
 ```bash
-git clone https://github.com/stritefax2/teammem.git
-cd teammem
+git clone https://github.com/stritefax2/prismian.git
+cd prismian
 pnpm install
 docker compose up -d postgres
 cp apps/api/.env.example apps/api/.env   # fill in Supabase + CONNECTOR_ENCRYPTION_KEY

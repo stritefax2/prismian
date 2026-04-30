@@ -8,7 +8,7 @@ import Markdown from "react-markdown";
 import { ImportDialog } from "../components/ImportDialog.js";
 import { DocumentUpload } from "../components/DocumentUpload.js";
 import { EditColumnsDialog } from "../components/EditColumnsDialog.js";
-import type { ChangeEvent } from "@teammem/shared";
+import type { ChangeEvent } from "@prismian/shared";
 
 interface Collection {
   id: string;
@@ -393,7 +393,7 @@ export function CollectionPage() {
             </p>
             <p className="text-xs text-gray-600 mb-3 leading-relaxed">
               {isConnected
-                ? "Removes the synced mirror from TeamMem. Your source database is not touched. This cannot be undone."
+                ? "Removes the synced mirror from Prismian. Your source database is not touched. This cannot be undone."
                 : "Removes all entries in this collection. This cannot be undone."}
             </p>
             <div className="flex gap-2">

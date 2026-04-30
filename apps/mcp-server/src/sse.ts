@@ -7,7 +7,7 @@ import http from "node:http";
 
 function createServer(): McpServer {
   const server = new McpServer({
-    name: "teammem",
+    name: "prismian",
     version: "0.1.0",
   });
 
@@ -156,7 +156,7 @@ function createServer(): McpServer {
 }
 
 const PORT = Number(process.env.PORT) || 3002;
-const EXPECTED_API_KEY = process.env.TEAMMEM_API_KEY || "";
+const EXPECTED_API_KEY = process.env.PRISMIAN_API_KEY || "";
 
 const transports = new Map<string, SSEServerTransport>();
 
@@ -184,7 +184,7 @@ const httpServer = http.createServer(async (req, res) => {
   if (EXPECTED_API_KEY) {
     const auth = req.headers.authorization;
     const token = auth?.replace("Bearer ", "");
-    if (!token || (token !== EXPECTED_API_KEY && !token.startsWith("tm_sk_"))) {
+    if (!token || (token !== EXPECTED_API_KEY && !token.startsWith("pr_sk_"))) {
       res.writeHead(401, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Unauthorized" }));
       return;
@@ -234,5 +234,5 @@ const httpServer = http.createServer(async (req, res) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`TeamMem MCP SSE server running on http://localhost:${PORT}`);
+  console.log(`Prismian MCP SSE server running on http://localhost:${PORT}`);
 });

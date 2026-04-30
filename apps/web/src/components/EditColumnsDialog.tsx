@@ -156,7 +156,7 @@ export function EditColumnsDialog({
           {matchingTable && (
             <>
               <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-                Toggle which columns are mirrored into TeamMem. The primary
+                Toggle which columns are mirrored into Prismian. The primary
                 key is always included. Changes save and re-sync immediately.
               </p>
 

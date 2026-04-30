@@ -1,21 +1,21 @@
 {
-  "name": "teammem-mcp",
+  "name": "prismian-mcp",
   "version": "0.1.0",
-  "description": "MCP server for TeamMem — connect Claude, Cursor, or any MCP-compatible AI to your team's persistent knowledge base",
+  "description": "MCP server for Prismian — connect Claude, Cursor, or any MCP-compatible AI to your team's permissioned data",
   "type": "module",
-  "author": "TeamMem",
-  "homepage": "https://teammem-web.vercel.app",
+  "author": "Prismian",
+  "homepage": "https://app.prismian.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stritefax2/teammem.git",
+    "url": "git+https://github.com/stritefax2/prismian.git",
     "directory": "apps/mcp-server"
   },
   "bugs": {
-    "url": "https://github.com/stritefax2/teammem/issues"
+    "url": "https://github.com/stritefax2/prismian/issues"
   },
   "bin": {
-    "teammem-mcp": "./dist/index.js",
-    "teammem-mcp-sse": "./dist/sse.js"
+    "prismian-mcp": "./dist/index.js",
+    "prismian-mcp-sse": "./dist/sse.js"
   },
   "files": [
     "dist",

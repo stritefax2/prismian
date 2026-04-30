@@ -6,7 +6,7 @@ import { SocialAuth } from "../components/SocialAuth.js";
 // Persist the "check your inbox" state across reloads. When a user opens the
 // confirmation email on a different device, the original tab might get
 // reloaded — without this the form would re-render empty and they'd panic.
-const PENDING_EMAIL_KEY = "teammem.register.pendingEmail";
+const PENDING_EMAIL_KEY = "prismian.register.pendingEmail";
 
 export function RegisterPage() {
   const { register, resendConfirmation } = useAuth();
@@ -79,7 +79,7 @@ export function RegisterPage() {
       <header className="border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-gray-900">
-            TeamMem
+            Prismian
           </Link>
           <Link
             to="/login"

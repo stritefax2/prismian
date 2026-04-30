@@ -93,7 +93,7 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <span className="text-xl font-bold text-gray-900 tracking-tight">
-              TeamMem
+              Prismian
             </span>
             <nav className="hidden sm:flex items-center gap-6 text-sm text-gray-600">
               <a href="#problem" className="hover:text-gray-900 transition-colors">Why</a>
@@ -223,7 +223,7 @@ export function LandingPage() {
                 </div>
                 <div className="flex-1 text-center">
                   <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-md">
-                    app.teammem.dev
+                    app.prismian.dev
                   </span>
                 </div>
               </div>
@@ -388,7 +388,7 @@ export function LandingPage() {
                 },
                 {
                   sign: "+",
-                  text: "One Postgres connector — every agent via TeamMem",
+                  text: "One Postgres connector — every agent via Prismian",
                 },
                 {
                   sign: "+",
@@ -443,7 +443,7 @@ export function LandingPage() {
               <span>
                 <span className="text-gray-400">a/</span>your-current-stack
                 <span className="text-gray-600 mx-1">→</span>
-                <span className="text-gray-400">b/</span>teammem
+                <span className="text-gray-400">b/</span>prismian
               </span>
               <span className="hidden sm:inline">migration · ~5 min</span>
             </div>
@@ -477,7 +477,7 @@ export function LandingPage() {
                 <span className="ml-3 text-xs text-gray-500 font-mono">
                   Claude · connected to{" "}
                   <span className="text-gray-900 font-medium">
-                    teammem (acme-corp)
+                    prismian (acme-corp)
                   </span>
                 </span>
               </div>
@@ -644,7 +644,7 @@ export function LandingPage() {
 
               <div className="bg-gray-950 text-white rounded-2xl p-5 border border-gray-900">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider font-mono mb-2">
-                  Without TeamMem
+                  Without Prismian
                 </p>
                 <p className="text-sm text-gray-300 leading-relaxed">
                   "Let me export a CSV from the admin panel, paste the first
@@ -684,7 +684,7 @@ export function LandingPage() {
                   Connect your database
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Paste a read-only Postgres connection string. TeamMem
+                  Paste a read-only Postgres connection string. Prismian
                   introspects the schema, you pick which tables to expose, and
                   pick which columns each table should share. Everything else
                   stays invisible. Initial sync runs in seconds.
@@ -743,14 +743,14 @@ export function LandingPage() {
                 <pre className="text-sm text-gray-300 overflow-x-auto leading-relaxed">
 {`{
   "mcpServers": {
-    "teammem": {
+    "prismian": {
       "command": "npx",
-      "args": ["-y", "teammem-mcp"],
+      "args": ["-y", "prismian-mcp"],
       "env": {`}
                   <span className="text-emerald-400">{`
-        "TEAMMEM_API_KEY": "tm_sk_a1b2..."`}</span>{`,`}
+        "PRISMIAN_API_KEY": "pr_sk_a1b2..."`}</span>{`,`}
                   <span className="text-gray-400">{`
-        "TEAMMEM_WORKSPACE": "ws_x9y8..."`}</span>
+        "PRISMIAN_WORKSPACE": "ws_x9y8..."`}</span>
 {`
       }
     }
@@ -815,7 +815,7 @@ export function LandingPage() {
                       "which customers churned this quarter?"
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      2:00 PM — queries <code>customers</code> via TeamMem
+                      2:00 PM — queries <code>customers</code> via Prismian
                     </p>
                   </div>
                 </div>
@@ -992,7 +992,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Inside TeamMem: the synced view ─── */}
+      {/* ─── Inside Prismian: the synced view ─── */}
       <section className="py-20 sm:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
@@ -1266,8 +1266,8 @@ export function LandingPage() {
               </span>
             </div>
             <pre className="text-[12px] sm:text-[13px] leading-relaxed text-gray-300 font-mono p-5 overflow-x-auto">
-{`  YOUR SOURCE DB                      TEAMMEM                        AI TOOLS
-  ──────────────                      ───────                        ────────
+{`  YOUR SOURCE DB                      PRISMIAN                       AI TOOLS
+  ──────────────                      ────────                       ────────
 
   ┌─────────────┐                    ┌──────────────┐               ┌────────┐
   │  Postgres   │  read-only,        │  Postgres    │  scoped,      │ Cursor │
@@ -1486,7 +1486,7 @@ export function LandingPage() {
               },
               {
                 q: "Just use a Postgres MCP server?",
-                a: "You could — and they exist. But they're single-user, no-auth, no-redaction, no-audit. TeamMem is what you get when you wrap one in identity, scoped keys, field-level ACLs, and a team UI. Also: native collections for agent-generated knowledge. Plain MCP servers can't do that.",
+                a: "You could — and they exist. But they're single-user, no-auth, no-redaction, no-audit. Prismian is what you get when you wrap one in identity, scoped keys, field-level ACLs, and a team UI. Also: native collections for agent-generated knowledge. Plain MCP servers can't do that.",
               },
               {
                 q: "Notion / Confluence?",
@@ -1494,7 +1494,7 @@ export function LandingPage() {
               },
               {
                 q: "Build our own with Postgres + pgvector?",
-                a: "You could — and many teams do, for about two weeks, until they hit agent keys, field-level ACLs, audit trail, sync state, optimistic locking, and encryption-at-rest. TeamMem is what you'd build. We built it so you don't have to.",
+                a: "You could — and many teams do, for about two weeks, until they hit agent keys, field-level ACLs, audit trail, sync state, optimistic locking, and encryption-at-rest. Prismian is what you'd build. We built it so you don't have to.",
               },
             ].map((item) => (
               <div
@@ -1672,7 +1672,7 @@ export function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <span className="text-lg font-bold text-white">TeamMem</span>
+              <span className="text-lg font-bold text-white">Prismian</span>
               <p className="text-xs text-gray-500 mt-1">
                 AI-safe access layer for your team's data.
               </p>
@@ -1685,7 +1685,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-gray-800 text-xs text-gray-600 text-center">
-            &copy; {new Date().getFullYear()} TeamMem. Built with Postgres,
+            &copy; {new Date().getFullYear()} Prismian. Built with Postgres,
             pgvector, and the MCP protocol.
           </div>
         </div>

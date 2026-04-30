@@ -7,10 +7,10 @@ import { api, getWorkspaceId, validateConfig } from "./client.js";
 validateConfig();
 
 const server = new McpServer({
-  name: "teammem",
+  name: "prismian",
   version: "0.1.0",
   description:
-    "TeamMem — safe, audited access layer for your team's data. Query synced database tables (customers, orders, etc.) and team-written documents (decisions, meeting notes). Two categories of collection exist: synced (read-only mirrors of an external database, best queried with query_structured) and native (writable, best queried with search for text, or query_structured for typed fields). Always call list_collections first — the response tells you exactly which tool to use for each collection.",
+    "Prismian — safe, audited access layer for your team's data. Query synced database tables (customers, orders, etc.) and team-written documents (decisions, meeting notes). Two categories of collection exist: synced (read-only mirrors of an external database, best queried with query_structured) and native (writable, best queried with search for text, or query_structured for typed fields). Always call list_collections first — the response tells you exactly which tool to use for each collection.",
 });
 
 server.tool(
@@ -473,7 +473,7 @@ server.tool(
 
 // MCP Prompts — these guide agent behavior around both querying and capture.
 server.prompt(
-  "teammem-assistant",
+  "prismian-assistant",
   "System prompt that makes the AI use the team's connected data and knowledge base",
   {},
   () => ({
@@ -482,7 +482,7 @@ server.prompt(
         role: "assistant",
         content: {
           type: "text",
-          text: `You are connected to TeamMem, the team's safe access layer for their data. Two categories of collection exist:
+          text: `You are connected to Prismian, the team's safe access layer for their data. Two categories of collection exist:
 
   1. SYNCED (read-only): mirrors of tables from an external database (Postgres, Supabase, etc.). Examples: customers, orders, products. Query with query_structured. Never try to write — writes return 409 read_only_source. To change data, the user has to update it in the source DB.
 
@@ -517,7 +517,7 @@ Save when the conversation produces something the team should remember:
 - **Summaries of calls/meetings**: action items, attendees, outcomes
 - **Research findings** worth persisting
 
-When you detect one, ask: "Want me to save this to TeamMem?" Then list_collections → write_entry (short) or store_document (long).
+When you detect one, ask: "Want me to save this to Prismian?" Then list_collections → write_entry (short) or store_document (long).
 
 ## Safety rules
 - Never attempt to write to a synced collection — it will fail and waste a turn.
@@ -535,7 +535,7 @@ When you detect one, ask: "Want me to save this to TeamMem?" Then list_collectio
 );
 
 server.prompt(
-  "save-to-teammem",
+  "save-to-prismian",
   "Save the current conversation's key takeaways to the team knowledge base",
   {},
   () => ({
@@ -544,7 +544,7 @@ server.prompt(
         role: "assistant",
         content: {
           type: "text",
-          text: `Review our conversation and identify any decisions, action items, or important information worth saving to TeamMem.
+          text: `Review our conversation and identify any decisions, action items, or important information worth saving to Prismian.
 
 For each item:
 1. Call list_collections to find the best collection
@@ -562,7 +562,7 @@ After saving, confirm what was stored and in which collection.`,
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("TeamMem MCP server connected");
+  console.error("Prismian MCP server connected");
 }
 
 main().catch((e) => {
