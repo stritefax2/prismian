@@ -1552,6 +1552,10 @@ export function LandingPage() {
                 a: "That's 4 config files in 4 developers' machines, each with your DB password in plaintext. No per-agent scopes, no column-level redaction, no audit of which agent read what. And you rotate that password every time someone leaves.",
               },
               {
+                q: "Use Postgres views with column grants?",
+                a: "Better than raw passwords — you get the column primitive natively. But views give you per-role scoping, not per-agent: every Cursor on every laptop sharing that role looks identical in pg_audit. Prismian is the layer above the primitive — named per-agent keys with their own scopes, audit at agent granularity, instant revocation without password rotation. Solo + one role + one Claude → views are fine. Team of 5 with three AI tools → you'd build Prismian yourself.",
+              },
+              {
                 q: "Just use a Postgres MCP server?",
                 a: "You could — and they exist. But they're single-user, no-auth, no-redaction, no-audit. Prismian is what you get when you wrap one in identity, scoped keys, field-level ACLs, and a team UI. Also: native collections for agent-generated knowledge. Plain MCP servers can't do that.",
               },
