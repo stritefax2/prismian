@@ -63,6 +63,14 @@ collectionRoutes.get("/", async (c) => {
 });
 
 collectionRoutes.post("/", async (c) => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return c.json(
+      { error: "Creating collections requires a user session" },
+      403
+    );
+  }
+
   const body = await c.req.json();
   const workspaceId = body.workspace_id;
 
@@ -303,6 +311,13 @@ collectionRoutes.get("/:id/entries", async (c) => {
 // would invalidate every existing source_row_id and would be a
 // re-create operation, not an edit.
 collectionRoutes.put("/:id", async (c) => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return c.json(
+      { error: "Editing collections requires a user session" },
+      403
+    );
+  }
   const id = c.req.param("id");
   const body = await c.req.json();
 
@@ -387,6 +402,13 @@ collectionRoutes.put("/:id", async (c) => {
 });
 
 collectionRoutes.delete("/:id", async (c) => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return c.json(
+      { error: "Deleting collections requires a user session" },
+      403
+    );
+  }
   const id = c.req.param("id");
   await query("DELETE FROM collections WHERE id = $1", [id]);
   return c.json({ message: "Deleted" });

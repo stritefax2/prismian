@@ -64,6 +64,16 @@ searchRoutes.post("/", async (c) => {
     if (collectionFilter.length === 0) {
       return c.json({ results: [] });
     }
+    // If the caller pinned the search to a specific collection, that
+    // collection must be inside the agent's accessible set. Otherwise an
+    // agent with read access to ONE collection could pass any other
+    // collection UUID in the workspace and exfiltrate its rows.
+    if (collection && !collectionFilter.includes(collection)) {
+      return c.json(
+        { error: "Read access denied to this collection" },
+        403
+      );
+    }
   }
 
   let results: any[] = [];

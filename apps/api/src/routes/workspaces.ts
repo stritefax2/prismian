@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { query, transaction } from "../db/client.js";
-import { authMiddleware, requireWorkspaceMember } from "../middleware/auth.js";
+import {
+  authMiddleware,
+  requireWorkspaceMember,
+  requireHumanWorkspaceMember,
+} from "../middleware/auth.js";
 import { createWorkspaceSchema, inviteMemberSchema } from "../shared/index.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import type { AppEnv } from "../types.js";
@@ -68,21 +72,10 @@ workspaceRoutes.get("/:id", requireWorkspaceMember, async (c) => {
 // and viewers can't take down a shared workspace. Requires the caller to
 // confirm by re-typing the workspace name in `confirm_name`, which prevents
 // fat-finger destruction. All child rows cascade via FK ON DELETE CASCADE.
-workspaceRoutes.delete("/:id", requireWorkspaceMember, async (c) => {
+workspaceRoutes.delete("/:id", requireHumanWorkspaceMember, async (c) => {
   const id = c.req.param("id");
-  const auth = c.get("auth");
-  if (!auth.userId) {
-    return c.json({ error: "User session required" }, 400);
-  }
-
-  const memberResult = await query<{ role: string }>(
-    "SELECT role FROM workspace_members WHERE workspace_id = $1 AND user_id = $2 AND accepted_at IS NOT NULL",
-    [id, auth.userId]
-  );
-  if (
-    memberResult.rows.length === 0 ||
-    memberResult.rows[0].role !== "owner"
-  ) {
+  const role = c.get("memberRole");
+  if (role !== "owner") {
     return c.json(
       { error: "Only workspace owners can delete the workspace" },
       403
@@ -114,7 +107,7 @@ workspaceRoutes.delete("/:id", requireWorkspaceMember, async (c) => {
   return c.json({ message: "Workspace deleted" });
 });
 
-workspaceRoutes.get("/:id/members", requireWorkspaceMember, async (c) => {
+workspaceRoutes.get("/:id/members", requireHumanWorkspaceMember, async (c) => {
   const id = c.req.param("id");
   const result = await query(
     `SELECT u.id, u.email, u.name, wm.role, wm.invited_at, wm.accepted_at
@@ -139,7 +132,7 @@ workspaceRoutes.get("/:id/members", requireWorkspaceMember, async (c) => {
   });
 });
 
-workspaceRoutes.post("/:id/invite", requireWorkspaceMember, async (c) => {
+workspaceRoutes.post("/:id/invite", requireHumanWorkspaceMember, async (c) => {
   const workspaceId = c.req.param("id");
   const body = await c.req.json();
   const parsed = inviteMemberSchema.safeParse(body);
@@ -149,6 +142,16 @@ workspaceRoutes.post("/:id/invite", requireWorkspaceMember, async (c) => {
 
   const email = parsed.data.email;
   const role = parsed.data.role;
+
+  // Only owners can grant the owner role. Without this check, any member
+  // could escalate themselves (or a colluding account) by inviting a new
+  // owner. requireHumanWorkspaceMember has already populated memberRole.
+  if (role === "owner" && c.get("memberRole") !== "owner") {
+    return c.json(
+      { error: "Only workspace owners can invite new owners" },
+      403
+    );
+  }
 
   // Check if already a member
   const existingUser = await query("SELECT id FROM users WHERE email = $1", [email]);
@@ -244,7 +247,7 @@ const DEMO_ROWS = [
   { name: "Oliver Reed", email: "oliver@cyberdyne.ai", company: "Cyberdyne", plan: "solo", status: "active", arr: 480, ssn_fake: "123-45-6795", notes: "Prosumer, possible referrer" },
 ];
 
-workspaceRoutes.post("/:id/seed-demo", requireWorkspaceMember, async (c) => {
+workspaceRoutes.post("/:id/seed-demo", requireHumanWorkspaceMember, async (c) => {
   const workspaceId = c.req.param("id");
 
   const existing = await query<{ id: string }>(

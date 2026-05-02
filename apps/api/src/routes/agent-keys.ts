@@ -18,6 +18,13 @@ agentKeyRoutes.use(
 );
 
 agentKeyRoutes.get("/", async (c) => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return c.json(
+      { error: "Listing agent keys requires a user session" },
+      403
+    );
+  }
   const workspaceId = c.req.query("workspace_id");
   if (!workspaceId) {
     return c.json({ error: "workspace_id query param required" }, 400);
@@ -152,6 +159,13 @@ agentKeyRoutes.put("/:id", async (c) => {
 });
 
 agentKeyRoutes.delete("/:id", async (c) => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return c.json(
+      { error: "Revoking agent keys requires a user session" },
+      403
+    );
+  }
   const id = c.req.param("id");
   await query("DELETE FROM agent_keys WHERE id = $1", [id]);
   return c.json({ message: "Deleted" });

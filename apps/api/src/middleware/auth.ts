@@ -117,3 +117,43 @@ export const requireWorkspaceMember = createMiddleware<{
 
   return c.json({ error: "Unauthorized" }, 401);
 });
+
+// Like requireWorkspaceMember, but rejects agent keys outright. Use this on
+// any human-only route: invites, member listing, audit log, agent-key
+// management, workspace/collection lifecycle. Agent keys are scoped tools
+// for entry-level reads/writes — they should never be able to manage the
+// workspace itself or read who's in it.
+export const requireHumanWorkspaceMember = createMiddleware<{
+  Variables: { auth: AuthContext; memberRole?: string };
+}>(async (c, next) => {
+  const auth = c.get("auth");
+
+  if (auth.agentKeyId) {
+    return c.json(
+      { error: "This endpoint requires a user session, not an agent key" },
+      403
+    );
+  }
+
+  if (!auth.userId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const workspaceId =
+    c.req.param("workspaceId") || c.req.param("id") || c.req.query("workspace_id");
+
+  if (!workspaceId) {
+    return c.json({ error: "Workspace ID required" }, 400);
+  }
+
+  const result = await query<{ role: string }>(
+    "SELECT role FROM workspace_members WHERE workspace_id = $1 AND user_id = $2 AND accepted_at IS NOT NULL",
+    [workspaceId, auth.userId]
+  );
+  if (result.rows.length === 0) {
+    return c.json({ error: "Not a member of this workspace" }, 403);
+  }
+
+  c.set("memberRole", result.rows[0].role);
+  await next();
+});

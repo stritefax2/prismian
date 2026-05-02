@@ -4,6 +4,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 import { api, getWorkspaceId } from "./client.js";
 import http from "node:http";
+import crypto from "node:crypto";
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -157,6 +158,30 @@ function createServer(): McpServer {
 
 const PORT = Number(process.env.PORT) || 3002;
 const EXPECTED_API_KEY = process.env.PRISMIAN_API_KEY || "";
+const EXPECTED_KEY_BUF = EXPECTED_API_KEY
+  ? Buffer.from(EXPECTED_API_KEY)
+  : null;
+
+if (!EXPECTED_API_KEY) {
+  // Refuse to start without an explicit shared secret. The previous
+  // behavior silently disabled auth when PRISMIAN_API_KEY was empty,
+  // which is a footgun for anyone exposing this server publicly.
+  console.error(
+    "FATAL: PRISMIAN_API_KEY is required to run the SSE server. " +
+      "Set it to a strong random value and share it only with trusted clients."
+  );
+  process.exit(1);
+}
+
+function isAuthorized(header: string | undefined): boolean {
+  if (!header || !EXPECTED_KEY_BUF) return false;
+  const token = header.startsWith("Bearer ")
+    ? header.slice("Bearer ".length)
+    : header;
+  const tokenBuf = Buffer.from(token);
+  if (tokenBuf.length !== EXPECTED_KEY_BUF.length) return false;
+  return crypto.timingSafeEqual(tokenBuf, EXPECTED_KEY_BUF);
+}
 
 const transports = new Map<string, SSEServerTransport>();
 
@@ -180,15 +205,15 @@ const httpServer = http.createServer(async (req, res) => {
     return;
   }
 
-  // Authenticate all non-health requests
-  if (EXPECTED_API_KEY) {
-    const auth = req.headers.authorization;
-    const token = auth?.replace("Bearer ", "");
-    if (!token || (token !== EXPECTED_API_KEY && !token.startsWith("pr_sk_"))) {
-      res.writeHead(401, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Unauthorized" }));
-      return;
-    }
+  // Authenticate all non-health requests. The token must equal the
+  // configured PRISMIAN_API_KEY exactly (timing-safe). This server uses
+  // its own configured key for outbound API calls, so accepting any
+  // pr_sk_-prefixed token here would let any caller impersonate the
+  // server's identity.
+  if (!isAuthorized(req.headers.authorization)) {
+    res.writeHead(401, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
   }
 
   if (url.pathname === "/sse" && req.method === "GET") {

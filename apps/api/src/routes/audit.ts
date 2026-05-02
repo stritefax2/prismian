@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { query } from "../db/client.js";
-import { authMiddleware, requireWorkspaceMember } from "../middleware/auth.js";
+import { authMiddleware, requireHumanWorkspaceMember } from "../middleware/auth.js";
 import type { AppEnv } from "../types.js";
 
 export const auditRoutes = new Hono<AppEnv>();
 
 auditRoutes.use("*", authMiddleware);
 
-auditRoutes.get("/:workspaceId", requireWorkspaceMember, async (c) => {
+auditRoutes.get("/:workspaceId", requireHumanWorkspaceMember, async (c) => {
   const workspaceId = c.req.param("workspaceId");
   const limit = Math.min(Number(c.req.query("limit")) || 50, 200);
   const offset = Number(c.req.query("offset")) || 0;
