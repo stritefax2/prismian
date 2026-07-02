@@ -144,9 +144,9 @@ export function LandingPage() {
             className="inline-flex items-center gap-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-full mb-6 hover:border-gray-300 transition-colors"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            Postgres connector in beta
+            New: MCP relay — wrap any vendor MCP server
             <span className="text-gray-300">·</span>
-            <span className="text-gray-500">Sheets &amp; Notion next</span>
+            <span className="text-gray-500">Postgres connector in beta</span>
           </a>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold text-gray-900 tracking-tight leading-[1.05]">
             Give every AI tool
@@ -157,10 +157,10 @@ export function LandingPage() {
             </span>
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Connect Postgres once. Every MCP tool gets scoped, audited reads —
-            column redaction included.{" "}
+            Connect Postgres — or any vendor's MCP server — once. Every AI
+            tool on the team gets scoped, audited access.{" "}
             <span className="text-gray-900 font-medium">
-              No schema dumps in chat. No shared prod passwords.
+              No shared prod passwords. No vendor tokens in dotfiles.
             </span>
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -297,6 +297,18 @@ export function LandingPage() {
                       status='churned'
                     </span>
                     <span className="text-gray-600 ml-auto">2m ago</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <span className="w-4 h-4 rounded bg-gray-800 text-gray-300 flex items-center justify-center text-[8px] font-bold border border-gray-700">
+                      A
+                    </span>
+                    <span>
+                      <span className="text-gray-300">Claude Desktop</span>{" "}
+                      called{" "}
+                      <span className="text-gray-300">linear_search_issues</span>{" "}
+                      — relayed, audited
+                    </span>
+                    <span className="text-gray-600 ml-auto">8m ago</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-500">
                     <span className="w-4 h-4 rounded bg-gray-800 text-gray-300 flex items-center justify-center text-[8px] font-bold border border-gray-700">
@@ -919,8 +931,8 @@ export function LandingPage() {
               },
               {
                 name: "MCP servers",
-                sub: "Any server",
-                status: "in progress",
+                sub: "Relay any remote server",
+                status: "beta",
                 iconKey: "mcp",
                 iconBg: "bg-gray-100 text-gray-700",
               },
@@ -986,8 +998,9 @@ export function LandingPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-gray-400 max-w-2xl mx-auto">
-            Vendor ships an MCP? Wrap it with your identity, scope, and
-            audit—no custom connector wait.
+            Live today: vendor ships a remote MCP server? Add it in Settings
+            and it's wrapped with your identity, per-key scopes, and audit
+            trail — no custom connector wait.
           </p>
         </div>
       </section>
@@ -1323,10 +1336,12 @@ export function LandingPage() {
               Where your data lives
             </h2>
             <p className="mt-3 text-gray-500 max-w-xl mx-auto leading-relaxed">
-              We don't proxy queries to your prod database. We mirror the
-              columns you select into our Postgres so agents can be
-              permissioned, redacted, and audited before data leaves the
-              API. Here's the full story.
+              Database connectors mirror the columns you select into our
+              Postgres so agents can be permissioned, redacted, and audited
+              before data leaves the API. Relayed MCP servers are the
+              opposite: pure pass-through — we store the credential
+              (encrypted) and the audit log, never the responses. Here's
+              the full story.
             </p>
           </div>
 
@@ -1507,9 +1522,10 @@ export function LandingPage() {
             What your agents actually get
           </h2>
           <p className="mt-3 text-gray-500 leading-relaxed">
-            Six read tools and two write tools wired automatically.
-            Schema-aware, scope-enforced, audited. Works with any
-            MCP-compatible AI tool — no SDK to integrate.
+            Ten built-in tools wired automatically — plus every tool from
+            the vendor MCP servers your workspace relays, namespaced and
+            permission-checked. Schema-aware, scope-enforced, audited.
+            Works with any MCP-compatible AI tool — no SDK to integrate.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             {[

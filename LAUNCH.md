@@ -181,7 +181,7 @@ If someone asks, tell them:
 - **No MFA in the UI yet.** Supabase supports TOTP; we'll wire the enrollment UX in v1.1.
 - **Sync is scheduled every 15 minutes**, not real-time. Source-of-truth updates take up to 15 min to propagate (or click "Sync now"). Real-time CDC is a v2 concern.
 - **Row-level filtering isn't built yet.** If you need to share *some customers* but not *others*, create a Postgres VIEW at the source and connect to that.
-- **Postgres only on day one.** Google Sheets is v1.1 (weeks, not months). Notion/Linear/Gmail are on the roadmap.
+- **Postgres is the only native connector on day one** — but the MCP relay wraps any *remote* MCP server (Linear, Sentry, Notion, ...) with Prismian's keys, scopes, and audit today. Vendors requiring OAuth flows (rather than static API tokens) aren't supported yet, and neither are local/stdio servers. Google Sheets native connector is v1.1.
 - **Self-host only for now.** No dedicated / single-tenant managed option yet.
 
 ## 9. Rollback plan
