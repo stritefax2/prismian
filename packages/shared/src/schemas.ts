@@ -190,6 +190,12 @@ export const createAgentKeySchema = z.object({
       z.literal("*"),
       z.record(z.array(z.enum(["read", "write", "delete"]))),
     ]),
+    mcp: z
+      .union([
+        z.literal("*"),
+        z.record(z.union([z.literal("*"), z.array(z.string().min(1))])),
+      ])
+      .optional(),
     field_restrictions: z
       .record(z.object({ deny_fields: z.array(z.string()) }))
       .optional(),
@@ -211,6 +217,47 @@ export const createAgentKeySchema = z.object({
   }),
 });
 
+// ── MCP relay ────────────────────────────────────────────────────────────
+
+// Slug namespaces relayed tools ("linear" → "linear_search_issues"), so it
+// must be a safe identifier fragment. Lowercase to keep tool names uniform.
+export const mcpConnectorSlug = z
+  .string()
+  .min(1)
+  .max(40)
+  .regex(
+    /^[a-z][a-z0-9_]*$/,
+    "Slug must be lowercase alphanumeric + underscore, starting with a letter"
+  );
+
+export const createMcpConnectorSchema = z.object({
+  workspace_id: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  slug: mcpConnectorSlug,
+  // Remote MCP servers only in v1 (streamable HTTP / SSE endpoints).
+  // stdio/npx upstreams need process sandboxing — deliberately out of scope.
+  url: z.string().url().max(2000),
+  // Optional bearer token / API key the upstream server expects.
+  // Stored AES-GCM encrypted, never returned to clients.
+  auth_token: z.string().max(4000).optional(),
+  // Extra headers some vendors require (e.g. X-Api-Key). Values encrypted.
+  headers: z.record(z.string().max(4000)).optional(),
+});
+
+export const updateMcpConnectorSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  url: z.string().url().max(2000).optional(),
+  auth_token: z.string().max(4000).nullable().optional(),
+  headers: z.record(z.string().max(4000)).nullable().optional(),
+  status: z.enum(["active", "disabled"]).optional(),
+});
+
+export const mcpCallSchema = z.object({
+  // Namespaced tool name as it appears in the manifest: `${slug}_${tool}`.
+  tool: z.string().min(1).max(200),
+  arguments: z.record(z.unknown()).default({}),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
@@ -224,3 +271,6 @@ export type CreateAgentKeyInput = z.infer<typeof createAgentKeySchema>;
 export type SourceConfigInput = z.infer<typeof sourceConfigSchema>;
 export type CreateDataSourceInput = z.infer<typeof createDataSourceSchema>;
 export type AggregateInput = z.infer<typeof aggregateSchema>;
+export type CreateMcpConnectorInput = z.infer<typeof createMcpConnectorSchema>;
+export type UpdateMcpConnectorInput = z.infer<typeof updateMcpConnectorSchema>;
+export type McpCallInput = z.infer<typeof mcpCallSchema>;

@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { api, getWorkspaceId, validateConfig } from "./client.js";
+import { registerRelayedTools } from "./relayed-tools.js";
 
 validateConfig();
 
@@ -560,6 +561,10 @@ After saving, confirm what was stored and in which collection.`,
 );
 
 async function main() {
+  // Pull in relayed tools (Linear, Sentry, ...) before connecting so the
+  // client's initial tools/list already includes them.
+  await registerRelayedTools(server);
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Prismian MCP server connected");

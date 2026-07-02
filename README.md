@@ -105,6 +105,16 @@ applies column redaction and audit before any byte leaves the API.
 Plus `delete_entry` and `store_document` for longer content. All 10 are
 exposed to any MCP-compatible client.
 
+### Relayed MCP servers
+
+Beyond the built-in tools, a workspace admin can register any **remote MCP
+server** (Linear, Sentry, Notion, ... — Settings → MCP servers) with its
+credential stored once, server-side, AES-256-GCM encrypted. Prismian relays
+the upstream tools to every agent under a namespaced name
+(`linear_search_issues`), enforcing per-key tool allowlists and writing
+every call to the audit trail. Your team configures one Prismian key per
+person — never the vendor tokens.
+
 ## Quick start (self-host)
 
 Prereqs: Node 20+, pnpm, Docker (for local Postgres), and a Supabase
@@ -171,11 +181,14 @@ client.
 ## Status
 
 - **Postgres** connector — beta, covers Supabase / Neon / RDS / plain Postgres.
-- **Google Sheets**, **Notion** — next.
-- **Linear**, **Airtable**, **MySQL**, **BigQuery** — planned.
-- **Wrapping third-party MCP servers** with Prismian's identity and audit
-  layer — planned, lets you add a new source whenever a vendor ships their
-  own MCP.
+- **MCP relay** — beta. Wrap any remote third-party MCP server with
+  Prismian's identity, permissions, and audit layer. Add a new source
+  whenever a vendor ships their own MCP.
+- **Google Sheets**, **Notion** — next (or today, via each vendor's own
+  MCP server through the relay).
+- **Airtable**, **MySQL**, **BigQuery** — planned.
+- **stdio/npx MCP upstreams** (sandboxed) — planned; the relay is
+  remote-only (Streamable HTTP / SSE) for now.
 
 ## Security model
 

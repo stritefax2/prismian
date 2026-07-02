@@ -5,6 +5,7 @@ import {
   canDelete,
   canUseQueryType,
   getMaxResults,
+  canCallMcpTool,
 } from "./permissions.js";
 import type { AgentPermissions } from "../shared/index.js";
 
@@ -98,5 +99,50 @@ describe("getMaxResults", () => {
 
   it("should default to 50", () => {
     expect(getMaxResults(fullAccess)).toBe(50);
+  });
+});
+
+describe("canCallMcpTool", () => {
+  it("full-access keys with no mcp field get all relayed tools", () => {
+    expect(canCallMcpTool(fullAccess, "linear", "search_issues")).toBe(true);
+  });
+
+  it("scoped keys with no mcp field are denied", () => {
+    expect(canCallMcpTool(scopedAccess, "linear", "search_issues")).toBe(false);
+  });
+
+  it("mcp: '*' grants every tool on every connector", () => {
+    const perms: AgentPermissions = { collections: {}, mcp: "*" };
+    expect(canCallMcpTool(perms, "linear", "search_issues")).toBe(true);
+    expect(canCallMcpTool(perms, "sentry", "get_event")).toBe(true);
+  });
+
+  it("per-connector '*' grants all tools on that connector only", () => {
+    const perms: AgentPermissions = {
+      collections: "*",
+      mcp: { linear: "*" },
+    };
+    expect(canCallMcpTool(perms, "linear", "anything")).toBe(true);
+    expect(canCallMcpTool(perms, "sentry", "get_event")).toBe(false);
+  });
+
+  it("explicit tool allowlist is enforced", () => {
+    const perms: AgentPermissions = {
+      collections: {},
+      mcp: { linear: ["search_issues", "get_issue"] },
+    };
+    expect(canCallMcpTool(perms, "linear", "search_issues")).toBe(true);
+    expect(canCallMcpTool(perms, "linear", "create_issue")).toBe(false);
+    expect(canCallMcpTool(perms, "sentry", "search_issues")).toBe(false);
+  });
+
+  it("an explicit mcp object overrides the full-access fallback", () => {
+    const perms: AgentPermissions = {
+      collections: "*",
+      mcp: { sentry: "*" },
+    };
+    // Full collections access, but MCP was explicitly narrowed to sentry.
+    expect(canCallMcpTool(perms, "linear", "search_issues")).toBe(false);
+    expect(canCallMcpTool(perms, "sentry", "get_event")).toBe(true);
   });
 });

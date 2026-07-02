@@ -116,6 +116,11 @@ export interface AgentPermissions {
   collections:
     | "*"
     | Record<string, Array<"read" | "write" | "delete">>;
+  // Relayed MCP tool access. Keyed by connector slug; value is "*" (all
+  // tools on that connector) or an explicit tool-name allowlist.
+  // Absent field falls back to: "*" when collections === "*" (full-access
+  // keys stay full-access), deny otherwise (scoped keys need explicit grants).
+  mcp?: "*" | Record<string, "*" | string[]>;
   field_restrictions?: Record<
     string,
     { deny_fields: string[] }
@@ -129,6 +134,51 @@ export interface AgentPermissions {
     max_results_per_query?: number;
     allowed_query_types?: Array<"semantic" | "structured" | "fulltext">;
   };
+}
+
+// ── MCP relay ────────────────────────────────────────────────────────────
+// An MCP connector is an upstream MCP server (Linear, Sentry, Notion, ...)
+// the workspace admin registered once. Prismian holds the credential,
+// relays tool calls, enforces per-key tool allowlists, and audits every call.
+
+export type McpConnectorStatus = "active" | "error" | "disabled";
+
+export interface McpConnector {
+  id: string;
+  workspace_id: string;
+  // URL-safe identifier used to namespace tools (e.g. "linear" →
+  // "linear_search_issues"). Unique per workspace.
+  slug: string;
+  name: string;
+  url: string;
+  status: McpConnectorStatus;
+  last_error: string | null;
+  // Cached tool manifest from the last successful connect/refresh.
+  tools: McpToolDescriptor[] | null;
+  tools_refreshed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface McpToolDescriptor {
+  // Original tool name on the upstream server.
+  name: string;
+  description: string | null;
+  // JSON Schema for the tool input, passed through verbatim.
+  input_schema: Record<string, unknown>;
+}
+
+// What an agent key sees: the namespaced tool list it may call.
+export interface McpToolManifestEntry {
+  // Namespaced name exposed to MCP clients: `${slug}_${name}`.
+  namespaced_name: string;
+  connector_id: string;
+  connector_slug: string;
+  connector_name: string;
+  name: string;
+  description: string | null;
+  input_schema: Record<string, unknown>;
 }
 
 export interface SearchResult {

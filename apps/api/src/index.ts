@@ -13,6 +13,7 @@ import { agentKeyRoutes } from "./routes/agent-keys.js";
 import { auditRoutes } from "./routes/audit.js";
 import { documentRoutes } from "./routes/documents.js";
 import { dataSourceRoutes } from "./routes/data-sources.js";
+import { mcpRoutes } from "./routes/mcp.js";
 import { adminRoutes } from "./routes/admin.js";
 import { errorHandler } from "./middleware/error.js";
 import { serve } from "@hono/node-server";
@@ -84,6 +85,7 @@ app.route("/api/v1/agent-keys", agentKeyRoutes);
 app.route("/api/v1/audit", auditRoutes);
 app.route("/api/v1/documents", documentRoutes);
 app.route("/api/v1/data-sources", dataSourceRoutes);
+app.route("/api/v1/mcp", mcpRoutes);
 app.route("/api/v1/admin", adminRoutes);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));

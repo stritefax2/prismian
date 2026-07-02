@@ -1,6 +1,6 @@
 {
   "name": "prismian-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for Prismian — connect Claude, Cursor, or any MCP-compatible AI to your team's permissioned data",
   "type": "module",
   "author": "Prismian",

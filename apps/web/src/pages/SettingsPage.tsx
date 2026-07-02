@@ -7,6 +7,7 @@ import { ConnectDataSource } from "../components/ConnectDataSource.js";
 import { ConnectedCollectionSetup } from "../components/ConnectedCollectionSetup.js";
 import { ActivityFeed } from "../components/ActivityFeed.js";
 import { NewKeyPanel } from "../components/NewKeyPanel.js";
+import { McpServersPanel } from "../components/McpServersPanel.js";
 
 interface Member {
   id: string;
@@ -61,7 +62,7 @@ type ColPerms = {
   deny_fields: Set<string>;
 };
 
-type Tab = "workspace" | "sources" | "agents" | "members" | "audit";
+type Tab = "workspace" | "sources" | "mcp" | "agents" | "members" | "audit";
 
 function formatRelative(iso: string | null): string {
   if (!iso) return "never";
@@ -114,7 +115,7 @@ export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab) || "members";
   const [tab, setTabState] = useState<Tab>(
-    ["workspace", "members", "agents", "sources", "audit"].includes(
+    ["workspace", "members", "agents", "sources", "mcp", "audit"].includes(
       initialTab
     )
       ? initialTab
@@ -471,6 +472,7 @@ export function SettingsPage() {
             [
               { id: "workspace", label: "Workspace" },
               { id: "sources", label: "Data sources" },
+              { id: "mcp", label: "MCP servers" },
               { id: "agents", label: "Agent keys" },
               { id: "members", label: "Members" },
               { id: "audit", label: "Audit log" },
@@ -620,6 +622,8 @@ export function SettingsPage() {
             )}
           </div>
         )}
+
+        {tab === "mcp" && id && <McpServersPanel workspaceId={id} />}
 
         {tab === "members" && (
           <div>

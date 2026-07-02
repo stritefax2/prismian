@@ -70,11 +70,20 @@ GET    /api/v1/agent-keys?workspace_id=
 POST   /api/v1/agent-keys
 DELETE /api/v1/agent-keys/:id
 GET    /api/v1/audit/:workspaceId
+GET    /api/v1/mcp/connectors?workspace_id=   (human only)
+POST   /api/v1/mcp/connectors                 (human only)
+PUT    /api/v1/mcp/connectors/:id             (human only)
+DELETE /api/v1/mcp/connectors/:id             (human only)
+POST   /api/v1/mcp/connectors/:id/refresh     (human only)
+GET    /api/v1/mcp/manifest                   (agent: relayed tools it may call)
+POST   /api/v1/mcp/call                       (agent: relay one tool call upstream)
 ```
 
 ## MCP Tools
 
 7 tools: `search`, `read_entry`, `write_entry`, `update_entry`, `list_collections`, `query_structured`, `workspace_info`
+
+Plus relayed tools: workspace admins register upstream MCP servers (Linear, Sentry, ...) under Settings → MCP servers. Prismian holds the credential, namespaces the tools as `{slug}_{tool}`, enforces per-key allowlists (`permissions.mcp`), and audits every call (`mcp_call` action). Relay code: `apps/api/src/services/mcp/`, `apps/api/src/routes/mcp.ts`, `apps/mcp-server/src/relayed-tools.ts`.
 
 Transports: stdio (local `npx prismian-mcp`) and SSE (remote HTTP)
 

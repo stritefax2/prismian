@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 import { api, getWorkspaceId } from "./client.js";
+import { registerRelayedTools } from "./relayed-tools.js";
 import http from "node:http";
 import crypto from "node:crypto";
 
@@ -225,6 +226,7 @@ const httpServer = http.createServer(async (req, res) => {
     });
 
     const server = createServer();
+    await registerRelayedTools(server);
     await server.connect(transport);
     return;
   }

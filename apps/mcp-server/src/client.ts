@@ -243,4 +243,30 @@ export const api = {
       `/api/v1/workspaces/${getWorkspaceId()}`
     );
   },
+
+  // Relayed MCP tools this key may call, namespaced `${connector}_${tool}`.
+  mcpManifest() {
+    return request<{ tools: McpToolManifestEntry[] }>(
+      "GET",
+      `/api/v1/mcp/manifest?workspace_id=${getWorkspaceId()}`
+    );
+  },
+
+  mcpCall(tool: string, args: Record<string, unknown>) {
+    return request<{ content: unknown[]; is_error: boolean }>(
+      "POST",
+      "/api/v1/mcp/call",
+      { tool, arguments: args, workspace_id: getWorkspaceId() }
+    );
+  },
+};
+
+export type McpToolManifestEntry = {
+  namespaced_name: string;
+  connector_id: string;
+  connector_slug: string;
+  connector_name: string;
+  name: string;
+  description: string | null;
+  input_schema: Record<string, unknown>;
 };

@@ -32,6 +32,24 @@ export function filterDeniedFields(
   return filtered;
 }
 
+// Relayed MCP tool access. Semantics of an absent `mcp` field: full-access
+// keys (collections === "*") keep full access — the workspace's "everything
+// key" should pick up newly added connectors without editing every key.
+// Scoped keys deny by default — a key restricted to specific collections
+// was deliberately narrowed, so relayed tools need an explicit grant.
+export function canCallMcpTool(
+  permissions: AgentPermissions,
+  connectorSlug: string,
+  toolName: string
+): boolean {
+  const mcp = permissions.mcp;
+  if (mcp === undefined) return permissions.collections === "*";
+  if (mcp === "*") return true;
+  const granted = mcp[connectorSlug];
+  if (!granted) return false;
+  return granted === "*" || granted.includes(toolName);
+}
+
 export function canDelete(permissions: AgentPermissions): boolean {
   return permissions.write_constraints?.can_delete !== false;
 }
