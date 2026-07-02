@@ -127,6 +127,7 @@ The Settings page pre-fills the full JSON config for each tool (Claude Desktop, 
 | API auth | Bearer tokens required on every route. Supabase JWTs for humans, `pr_sk_`-prefixed keys for agents. |
 | Agent keys | 32 bytes of random, SHA-256 hashed at rest, raw key shown exactly once at creation. Last 4 characters stored for visual identification only. Revocable at any time. |
 | Connection strings | AES-256-GCM encrypted using `CONNECTOR_ENCRYPTION_KEY`, never returned to the client in plaintext. |
+| Relayed MCP servers | Upstream credentials (tokens/headers) AES-256-GCM encrypted, attached server-side per call, never sent to browsers or agents. Per-key tool allowlists (`permissions.mcp`), every relayed call audit-logged (`mcp_call`). Remote upstreams only — no arbitrary process execution. |
 | Workspace isolation | Middleware on every route resolves the target workspace and verifies caller membership. Belt: Postgres RLS policies on workspaces, collections, entries, data_sources. |
 | Connected collections | Structurally read-only — `POST`/`PUT`/`DELETE /entries` reject with `409 read_only_source` when `source_id IS NOT NULL`, regardless of the caller's permissions. |
 | Column redaction | `field_restrictions` on agent keys strip denied fields from `structured_data` before the API returns it. Enforced server-side in `filterDeniedFields`. |
