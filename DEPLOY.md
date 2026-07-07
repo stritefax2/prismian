@@ -130,7 +130,8 @@ The Settings page pre-fills the full JSON config for each tool (Claude Desktop, 
 | Relayed MCP servers | Upstream credentials (tokens/headers) AES-256-GCM encrypted, attached server-side per call, never sent to browsers or agents. Per-key tool allowlists (`permissions.mcp`), every relayed call audit-logged (`mcp_call`). Remote upstreams only — no arbitrary process execution. |
 | Workspace isolation | Middleware on every route resolves the target workspace and verifies caller membership. Belt: Postgres RLS policies on workspaces, collections, entries, data_sources. |
 | Connected collections | Structurally read-only — `POST`/`PUT`/`DELETE /entries` reject with `409 read_only_source` when `source_id IS NOT NULL`, regardless of the caller's permissions. |
-| Column redaction | `field_restrictions` on agent keys strip denied fields from `structured_data` before the API returns it. Enforced server-side in `filterDeniedFields`. |
+| Live collections | Agent queries translate to `SELECT`s executed on the source inside `READ ONLY` transactions, against a role the connector verifies is low-privilege. Only a closed query DSL is accepted — never raw SQL. Denied columns are excluded from the `SELECT` list itself, so redacted data never leaves the source database. No rows stored in Prismian. |
+| Column redaction | `field_restrictions` on agent keys strip denied fields from `structured_data` before the API returns it (mirror/native), or exclude them from the source query projection entirely (live). Enforced server-side. |
 | CORS | Env-driven allowlist (`ALLOWED_ORIGINS`). Wildcard origins not permitted. |
 | Admin cron endpoint | `CRON_SECRET` required in `x-cron-secret` or `Authorization: Bearer` header. Constant-time compared. |
 | Audit trail | Every agent action + every user mutation logged to `audit_log` with actor, resource, timestamp. |

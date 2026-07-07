@@ -22,8 +22,24 @@ export interface Resolver {
 const UUID_RE =
   /\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\/|$)/i;
 
+const BARE_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Live-collection rows have synthetic ids: live_<collectionUuid>_<sourcePk>.
+// They resolve to a workspace via the embedded collection, not the entries
+// table (they have no entries row by design).
+const LIVE_ID_RE =
+  /^live_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_.+$/i;
+
 function firstUuidInPath(path: string): string | undefined {
   const match = path.match(UUID_RE);
+  return match ? match[1] : undefined;
+}
+
+function liveIdInPath(path: string): string | undefined {
+  const match = path.match(
+    /\/(live_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_[^/]+)(?:\/|$)/i
+  );
   return match ? match[1] : undefined;
 }
 
@@ -41,9 +57,22 @@ async function resolveWorkspaceId(
     // first UUID from the URL path — works for both /collections/:id
     // and /collections/:id/entries shapes.
     const pathUuid = firstUuidInPath(c.req.path);
+    const pathLiveId = liveIdInPath(c.req.path);
     for (const r of resolvers) {
-      const val = c.req.param(r.paramName) ?? pathUuid;
+      const val = c.req.param(r.paramName) ?? pathLiveId ?? pathUuid;
       if (!val) continue;
+      const liveMatch = val.match(LIVE_ID_RE);
+      if (liveMatch) {
+        const res = await query<{ workspace_id: string }>(
+          "SELECT workspace_id FROM collections WHERE id = $1",
+          [liveMatch[1]]
+        );
+        if (res.rows.length > 0) return res.rows[0].workspace_id;
+        continue;
+      }
+      // Guard against non-UUID params reaching a uuid-typed column —
+      // Postgres would throw (invalid input syntax) and 500 the request.
+      if (!BARE_UUID_RE.test(val)) continue;
       const res = await query<{ workspace_id: string }>(
         `SELECT workspace_id FROM ${r.table} WHERE ${r.column ?? "id"} = $1`,
         [val]

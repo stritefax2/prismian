@@ -23,6 +23,7 @@ interface Collection {
     columns: string[];
     content_column?: string;
   } | null;
+  source_mode: "mirror" | "live" | null;
   sync_status: "idle" | "syncing" | "error" | null;
   last_sync_at: string | null;
   last_sync_error: string | null;
@@ -71,6 +72,7 @@ export function CollectionPage() {
   const PAGE_SIZE = 25;
 
   const isConnected = Boolean(collection?.source_id);
+  const isLive = collection?.source_mode === "live";
 
   // Debounce the filter so we don't fire a request on every keystroke.
   // 250ms feels responsive without thrashing the API.
@@ -303,7 +305,12 @@ export function CollectionPage() {
                 <span className="text-[10px] font-mono uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">
                   read-only
                 </span>
-                Synced from{" "}
+                {isLive && (
+                  <span className="text-[10px] font-mono uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-200 px-1.5 py-0.5 rounded">
+                    live
+                  </span>
+                )}
+                {isLive ? "Live from" : "Synced from"}{" "}
                 <code className="bg-gray-100 border border-gray-200 text-gray-900 px-1.5 py-0.5 rounded text-xs font-mono">
                   {collection.source_config.table}
                 </code>
@@ -314,13 +321,16 @@ export function CollectionPage() {
                 )}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {collection.last_sync_at
-                  ? `Last synced ${new Date(collection.last_sync_at).toLocaleString()}`
-                  : "Awaiting first sync"}
+                {isLive
+                  ? "Queries run against your database at request time — nothing is stored in Prismian"
+                  : collection.last_sync_at
+                    ? `Last synced ${new Date(collection.last_sync_at).toLocaleString()}`
+                    : "Awaiting first sync"}
                 {collection.source_config.content_column &&
                   ` · content: ${collection.source_config.content_column}`}
               </p>
-              {collection.sync_status === "error" &&
+              {!isLive &&
+                collection.sync_status === "error" &&
                 collection.last_sync_error && (
                   <p className="text-xs text-red-600 mt-1 truncate">
                     {collection.last_sync_error}
@@ -339,15 +349,17 @@ export function CollectionPage() {
                 <span className="text-emerald-500">+</span>
                 Agent key for this data
               </button>
-              <button
-                onClick={handleSyncNow}
-                disabled={syncing || collection.sync_status === "syncing"}
-                className="bg-gray-900 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-800 disabled:opacity-60 transition-colors"
-              >
-                {syncing || collection.sync_status === "syncing"
-                  ? "Syncing..."
-                  : "Sync now"}
-              </button>
+              {!isLive && (
+                <button
+                  onClick={handleSyncNow}
+                  disabled={syncing || collection.sync_status === "syncing"}
+                  className="bg-gray-900 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-gray-800 disabled:opacity-60 transition-colors"
+                >
+                  {syncing || collection.sync_status === "syncing"
+                    ? "Syncing..."
+                    : "Sync now"}
+                </button>
+              )}
               <div className="relative">
                 <button
                   onClick={() => setShowManageMenu((v) => !v)}
@@ -392,9 +404,11 @@ export function CollectionPage() {
               Delete this collection?
             </p>
             <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-              {isConnected
-                ? "Removes the synced mirror from Prismian. Your source database is not touched. This cannot be undone."
-                : "Removes all entries in this collection. This cannot be undone."}
+              {isLive
+                ? "Removes this live connection from Prismian. Your source database is not touched. This cannot be undone."
+                : isConnected
+                  ? "Removes the synced mirror from Prismian. Your source database is not touched. This cannot be undone."
+                  : "Removes all entries in this collection. This cannot be undone."}
             </p>
             <div className="flex gap-2">
               <button
@@ -559,7 +573,17 @@ export function CollectionPage() {
                 />
               </svg>
             </div>
-            {isConnected ? (
+            {isLive ? (
+              <>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No rows in the source table
+                </h3>
+                <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                  This collection queries your database live. The source
+                  table appears to be empty, or nothing matched your filter.
+                </p>
+              </>
+            ) : isConnected ? (
               <>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {collection.sync_status === "syncing"

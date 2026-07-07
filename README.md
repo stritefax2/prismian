@@ -21,18 +21,27 @@ redacted read access. No pasting schemas into chat. No shared prod passwords.
 
 Prismian is an open-source **access layer** for your team's data in the age of AI
 agents. You connect a data source once (currently Postgres; Google Sheets and
-Notion next). Prismian mirrors the tables and columns you pick into a
+Notion next). Prismian exposes the tables and columns you pick as a
 permissioned workspace that every AI tool on your team can query over the
 [Model Context Protocol](https://modelcontextprotocol.io/).
 
 Two kinds of collection live inside a workspace:
 
-- **Connected collections** — read-only mirrors of rows from your source
-  database. Agents never write to these. Writes from the API return
-  `409 read_only_source` by construction, not by policy.
+- **Connected collections** — read-only views of your source database.
+  Agents never write to these; writes from the API return
+  `409 read_only_source` by construction, not by policy. Two modes:
+  - **Live** (default) — every agent query is translated into a `SELECT`
+    and executed against your database at request time, inside a
+    `READ ONLY` transaction, with denied columns excluded from the
+    projection. Data is always current and **no rows are stored in
+    Prismian** — only schema config, the encrypted credential, and audit
+    logs.
+  - **Mirror** — rows sync into Prismian every 15 minutes. Opt into this
+    when you want semantic (embedding) search over a text column, or
+    querying that survives source-database downtime.
 - **Native collections** — writable, versioned entries the team and agents
   use to capture decisions, meeting notes, insights, or observations linked
-  to synced rows.
+  to connected rows.
 
 Every agent gets a scoped key with its own permissions — which collections
 it can read, which columns to redact, how many results per query, and (in
@@ -56,12 +65,13 @@ audit trail.
        │  Your source DB     │  ← Postgres / Supabase / Neon / RDS
        │  (read-only role)   │
        └──────────┬──────────┘
-                  │ scheduled mirror (15 min)
+                  │ live: SELECT at request time (READ ONLY txn)
+                  │ mirror: scheduled sync (15 min)
                   ▼
        ┌─────────────────────┐        ┌─────────────────────┐
        │  Prismian API        │◀──────▶│  Postgres + pgvector│
-       │  (Hono + Node)      │        │  (mirror + native + │
-       └───┬──────────┬──────┘        │  audit log)         │
+       │  (Hono + Node)      │        │  (native + optional │
+       └───┬──────────┬──────┘        │  mirrors + audit)   │
            │          │               └─────────────────────┘
            │          │
            │          │ ──── MCP (stdio / SSE) ────▶ Claude, Cursor, ChatGPT...
@@ -74,8 +84,11 @@ audit trail.
        └─────────────────────┘
 ```
 
-Source DB is queried only at sync time. Agents always hit our mirror, which
-applies column redaction and audit before any byte leaves the API.
+In live mode (the default), agent queries hit your database directly —
+Prismian applies column redaction by never selecting denied columns, logs
+the query to the audit trail, and stores nothing. In mirror mode, agents
+hit our copy, with the same redaction and audit applied before any byte
+leaves the API.
 
 ## What's in this repo
 
@@ -180,7 +193,9 @@ client.
 
 ## Status
 
-- **Postgres** connector — beta, covers Supabase / Neon / RDS / plain Postgres.
+- **Postgres** connector — beta, covers Supabase / Neon / RDS / plain
+  Postgres. Live mode (query at request time, nothing stored) is the
+  default; mirror mode (15-min sync, enables semantic search) is opt-in.
 - **MCP relay** — beta. Wrap any remote third-party MCP server with
   Prismian's identity, permissions, and audit layer. Add a new source
   whenever a vendor ships their own MCP.
@@ -199,6 +214,9 @@ covered in [DEPLOY.md](./DEPLOY.md#security-model-quick-reference).
 Highlights:
 
 - Scoped agent keys (32-byte random, SHA-256 hashed, `pr_sk_` prefix).
+- Live collections: queries run in `READ ONLY` transactions against a
+  low-privilege role; denied columns are excluded from the `SELECT`
+  itself, so redacted data never leaves your database at all.
 - Field-level redaction applied before data leaves the API.
 - Structural write-lock on connected collections — `POST` / `PUT` / `DELETE`
   reject with `409 read_only_source` regardless of caller permissions.

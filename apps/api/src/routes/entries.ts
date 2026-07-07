@@ -14,6 +14,15 @@ import {
   filterDeniedFields,
   getCollectionNameById,
 } from "../services/permissions.js";
+import { loadConnectionString } from "../services/connectors/sync.js";
+import {
+  allowedColumnsFor,
+  buildReadRowSql,
+  parseLiveEntryId,
+  runLiveSql,
+  shapeLiveRow,
+  LiveQueryError,
+} from "../services/connectors/live-query.js";
 
 export const entryRoutes = new Hono<AppEnv>();
 
@@ -37,6 +46,79 @@ const READ_ONLY_RESPONSE = {
 
 entryRoutes.get("/:id", async (c) => {
   const id = c.req.param("id");
+
+  // Rows from live collections carry synthetic ids that encode the
+  // collection + source primary key. Re-fetch the row from the source
+  // database now — there is no local copy to read.
+  const liveRef = parseLiveEntryId(id);
+  if (liveRef) {
+    const auth = c.get("auth");
+    const permissions = auth.permissions as AgentPermissions | undefined;
+
+    const colRes = await query<{
+      name: string;
+      workspace_id: string;
+      source_id: string | null;
+      source_config: any;
+      source_mode: string | null;
+    }>(
+      "SELECT name, workspace_id, source_id, source_config, source_mode FROM collections WHERE id = $1",
+      [liveRef.collectionId]
+    );
+    const col = colRes.rows[0];
+    if (!col || col.source_mode !== "live" || !col.source_id || !col.source_config) {
+      return c.json({ error: "Entry not found" }, 404);
+    }
+    if (permissions && !canAccessCollection(permissions, col.name, "read")) {
+      return c.json({ error: "Access denied to this collection" }, 403);
+    }
+
+    const deniedFields = new Set(
+      permissions?.field_restrictions?.[col.name]?.deny_fields ?? []
+    );
+    const allowed = allowedColumnsFor(col.source_config, deniedFields);
+    try {
+      const connectionString = await loadConnectionString(col.source_id);
+      if (!connectionString) {
+        return c.json({ error: "Data source credentials missing" }, 502);
+      }
+      const rows = await runLiveSql(
+        connectionString,
+        buildReadRowSql(col.source_config, allowed, liveRef.sourceRowId)
+      );
+      if (rows.length === 0) {
+        return c.json({ error: "Entry not found" }, 404);
+      }
+      const entry = shapeLiveRow(
+        rows[0],
+        {
+          id: liveRef.collectionId,
+          workspace_id: col.workspace_id,
+          source_config: col.source_config,
+        },
+        allowed
+      );
+      // resource_id is a UUID column — the synthetic live id doesn't fit,
+      // so log the collection and carry the source row id in metadata.
+      logAction(auth, col.workspace_id, "read", "entry", liveRef.collectionId, {
+        collection: col.name,
+        source_row_id: liveRef.sourceRowId,
+        live: true,
+      });
+      return c.json({ entry });
+    } catch (e) {
+      if (e instanceof LiveQueryError) {
+        return c.json({ error: e.message }, e.status);
+      }
+      return c.json(
+        {
+          error: `Live query against source failed: ${e instanceof Error ? e.message : String(e)}`,
+        },
+        502
+      );
+    }
+  }
+
   const result = await query(
     `SELECT e.id, e.collection_id, e.workspace_id, e.structured_data, e.content,
             e.created_by, e.created_by_agent, e.created_at, e.updated_at, e.version,
@@ -153,6 +235,12 @@ entryRoutes.put("/:id", async (c) => {
   const parsed = updateEntrySchema.safeParse(body);
   if (!parsed.success) {
     return c.json({ error: parsed.error.flatten() }, 400);
+  }
+
+  // Live rows exist only in the source database; Prismian is read-only
+  // over them by construction.
+  if (parseLiveEntryId(id)) {
+    return c.json(READ_ONLY_RESPONSE, 409);
   }
 
   const permissions = auth.permissions as AgentPermissions | undefined;
@@ -327,6 +415,10 @@ entryRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const permissions = auth.permissions as AgentPermissions | undefined;
 
+  if (parseLiveEntryId(id)) {
+    return c.json(READ_ONLY_RESPONSE, 409);
+  }
+
   const precheck = await query(
     `SELECT e.collection_id, c.name AS collection_name, e.workspace_id,
             c.source_id, e.source_row_id
@@ -396,6 +488,12 @@ entryRoutes.get("/:id/versions", async (c) => {
   const id = c.req.param("id");
   const auth = c.get("auth");
   const permissions = auth.permissions as AgentPermissions | undefined;
+
+  // Live rows have no Prismian-side history — versioning happens (or
+  // doesn't) in the customer's source database.
+  if (parseLiveEntryId(id)) {
+    return c.json({ versions: [], live: true });
+  }
 
   // Version history contains the same structured_data as the entry itself,
   // so redaction and per-key collection access must be enforced here too —

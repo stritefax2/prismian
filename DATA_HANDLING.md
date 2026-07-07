@@ -6,7 +6,7 @@ your team, this is the page to read first.
 
 ## What leaves your database
 
-When you connect a Postgres source, Prismian runs exactly three kinds of
+When you connect a Postgres source, Prismian runs exactly four kinds of
 query against it:
 
 1. **`SELECT 1`** on connect, to confirm the connection works.
@@ -18,18 +18,24 @@ query against it:
    / `information_schema.columns` / `pg_catalog` when you click
    "introspect." This lists tables and columns so you can pick which
    ones to expose. We do not read table _contents_ here.
+4. **Per-request `SELECT`s for live collections** (the default mode).
+   When an agent queries a live collection, its request — expressed in a
+   closed filter/aggregate DSL, never raw SQL — is translated into one
+   `SELECT` over the columns that agent key is allowed to see, and
+   executed inside a `READ ONLY` transaction. The result goes to the
+   agent; **nothing from it is stored in Prismian**.
 
-After you pick tables + columns to expose, a scheduled sync (every 15
-minutes by default, configurable via `SYNC_INTERVAL_MS`) issues a
-straight `SELECT <your-selected-columns> FROM <your-selected-table>
-LIMIT 10001` against your database. That's it. No `pg_stat_*`, no
-database-wide scans, no writes, no DDL, no event triggers, no
-`pg_dump`, no `COPY`.
+If you instead opt a collection into **mirror mode**, a scheduled sync
+(every 15 minutes by default, configurable via `SYNC_INTERVAL_MS`)
+issues a straight `SELECT <your-selected-columns> FROM
+<your-selected-table> LIMIT 10001` against your database. That's it
+in either mode. No `pg_stat_*`, no database-wide scans, no writes, no
+DDL, no event triggers, no `pg_dump`, no `COPY`.
 
 Per-sync row ceiling is `CONNECTOR_MAX_ROWS` (default 10,000). Queries
 run with `statement_timeout` set at the connection level (10s for
-introspect, 60s for sync), so a runaway Prismian sync can't wedge your
-database.
+introspect, 15s for live queries, 60s for sync), so a runaway Prismian
+query can't wedge your database.
 
 **Strongly recommended**: provision a dedicated read-only role. The
 connector UI prints the exact SQL, but it's:
@@ -50,9 +56,14 @@ The connector rejects superuser, `CREATEROLE`, `CREATEDB`, and
 
 In Prismian's own Postgres database:
 
-- **Synced rows**, one row per source row, into an `entries` table as
-  JSONB. Only the columns you selected when you created the collection
-  are mirrored. Columns you did not select are never read, never stored.
+- **For live collections (default): no rows at all.** Prismian stores
+  the collection's schema config (table name, column list, primary key),
+  the encrypted credential, and audit log entries. Row data flows
+  through per request and is never written to disk on our side.
+- **For mirror collections (opt-in): synced rows**, one row per source
+  row, into an `entries` table as JSONB. Only the columns you selected
+  when you created the collection are mirrored. Columns you did not
+  select are never read, never stored.
 - **Connection strings**, AES-256-GCM encrypted with
   `CONNECTOR_ENCRYPTION_KEY` (a server-side secret you generate). They
   are never returned to the browser or to any agent. If you lose the
@@ -71,11 +82,16 @@ In Prismian's own Postgres database:
 ## What leaves Prismian
 
 For an agent query over MCP: the rows your agent key is allowed to
-read, with denied fields stripped out on the server before the
-response is serialized. Redaction is enforced in one place, in
-`filterDeniedFields`, and every read route calls it (including
-`/collections/:id/entries` and `/entries/:id/versions` — the two paths
-most commonly missed in this kind of product).
+read, with denied fields removed. For mirror and native collections,
+redaction is enforced in one place, in `filterDeniedFields`, and every
+read route calls it (including `/collections/:id/entries` and
+`/entries/:id/versions` — the two paths most commonly missed in this
+kind of product). For live collections it's stronger still: denied
+columns are excluded from the `SELECT` sent to your database, so the
+redacted data never even leaves your infrastructure — and a filter,
+sort, or aggregate that references a denied column is rejected with a
+403 rather than silently ignored (it would leak the value by
+inference).
 
 Writes from agents only land in _native_ collections. Writes to
 connected collections — the mirrored tables from your source DB —
@@ -122,9 +138,10 @@ Three ways, each takes about one click:
    key's hash is deleted. Any AI tool using it gets 401 on its next
    call; there's nothing cached to keep working.
 2. **Disconnect a source** — Settings → Data Sources → Remove. All
-   connected collections derived from that source and their mirrored
-   rows are deleted with `ON DELETE CASCADE`. Your source database
-   is untouched.
+   connected collections derived from that source (and, for mirror
+   collections, their mirrored rows) are deleted with
+   `ON DELETE CASCADE`. Live collections have no stored rows to delete.
+   Your source database is untouched.
 3. **Delete the workspace** — via the API (`DELETE
    /api/v1/workspaces/:id`; a UI button is coming). Every row owned by
    the workspace is cascaded: collections, entries, agent keys, audit
@@ -132,10 +149,13 @@ Three ways, each takes about one click:
 
 ## What Prismian is _not_
 
-- Not a write path back to your source database. Ever.
-- Not a query passthrough. Agent queries hit Prismian's mirror, not
-  yours.
-- Not a replication tool — 15-minute sync, not real-time CDC.
+- Not a write path back to your source database. Ever. Live queries run
+  in `READ ONLY` transactions; the sync only ever issues `SELECT`s.
+- Not a raw SQL passthrough. Agents express queries in a closed
+  filter/aggregate DSL; Prismian composes the SQL from validated,
+  quoted identifiers. No agent-supplied SQL ever reaches your database.
+- Not a replication tool — mirror mode is a 15-minute sync, not
+  real-time CDC (live mode makes staleness moot for most uses).
 - Not a data warehouse. Row caps are deliberate.
 - Not a chat product. We expose MCP tools; the chat UI is Claude /
   Cursor / ChatGPT / whatever.
@@ -162,14 +182,29 @@ covers setup. You own the encryption key. You own the DB.
 If a security-minded teammate is reviewing Prismian, these are the
 answers they're probably after:
 
-- **"Can Prismian write to our prod DB?"** No. The connection is opened
-  via `pg.Pool`, but the only SQL the connector ever issues is `SELECT`.
-  There is no `INSERT` / `UPDATE` / `DELETE` / DDL anywhere in
-  `apps/api/src/services/connectors/postgres.ts`.
-- **"Can an agent escalate to read a denied column?"** Denied columns
-  are stripped in `filterDeniedFields` before serialization. Every
-  read path — single entry, collection list, version history, search,
-  structured query, aggregate — goes through the same function.
+- **"Can Prismian write to our prod DB?"** No — three stacked
+  protections. The connector refuses privileged roles at connect time;
+  live queries run inside `READ ONLY` transactions (Postgres itself
+  rejects writes); and the only SQL Prismian composes is `SELECT` —
+  there is no `INSERT` / `UPDATE` / `DELETE` / DDL anywhere in
+  `apps/api/src/services/connectors/`.
+- **"Can an agent inject SQL through a live query?"** Values are always
+  bound parameters, never interpolated. Identifiers (table, columns)
+  come from the collection config the admin created — validated against
+  a strict regex at creation and identifier-quoted at query time — not
+  from the agent. Field names the agent references must match the
+  configured column list or the request is rejected.
+- **"Can an agent escalate to read a denied column?"** For live
+  collections, denied columns are excluded from the `SELECT` itself and
+  any reference to them in a filter/sort/aggregate returns 403. For
+  mirror and native collections, denied columns are stripped in
+  `filterDeniedFields` before serialization. Every read path — single
+  entry, collection list, version history, search, structured query,
+  aggregate — is covered.
+- **"What happens to agents if our source DB is down?"** Live
+  collections return errors until it's back (Prismian stores nothing to
+  serve instead — that's the point). Mirror collections keep serving
+  the last synced copy.
 - **"Can I prove which agent read which row?"** Yes. Every agent read
   writes an `audit_log` row with the agent key id and the entry id.
 - **"What happens if Prismian goes down?"** Your source DB is

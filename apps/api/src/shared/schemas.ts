@@ -67,6 +67,7 @@ export const createCollectionSchema = z
     schema: z.record(z.unknown()).optional(),
     source_id: z.string().uuid().optional(),
     source_config: sourceConfigSchema.optional(),
+    source_mode: z.enum(["mirror", "live"]).optional(),
   })
   .refine(
     (data) =>
@@ -75,7 +76,11 @@ export const createCollectionSchema = z
       message: "source_id and source_config must be provided together",
       path: ["source_config"],
     }
-  );
+  )
+  .refine((data) => data.source_mode === undefined || data.source_id !== undefined, {
+    message: "source_mode only applies to connected collections",
+    path: ["source_mode"],
+  });
 
 export const createDataSourceSchema = z.object({
   name: z.string().min(1).max(100),

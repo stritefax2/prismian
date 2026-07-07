@@ -54,7 +54,7 @@ function sslConfigFor(connectionString: string): boolean | { rejectUnauthorized:
   return false;
 }
 
-async function withClient<T>(
+export async function withClient<T>(
   connectionString: string,
   timeoutMs: number,
   fn: (client: pg.PoolClient) => Promise<T>
@@ -126,12 +126,12 @@ async function assertLowPrivilegeRole(client: pg.PoolClient): Promise<void> {
 
 // Postgres identifier quoting. We already validated via Zod regex upstream,
 // but we quote defensively. Supports optional schema.table form.
-function quoteQualified(name: string): string {
+export function quoteQualified(name: string): string {
   const parts = name.split(".");
   return parts.map((p) => `"${p.replace(/"/g, '""')}"`).join(".");
 }
 
-function quoteIdent(name: string): string {
+export function quoteIdent(name: string): string {
   return `"${name.replace(/"/g, '""')}"`;
 }
 
@@ -139,6 +139,32 @@ export async function testConnection(connectionString: string): Promise<void> {
   await withClient(connectionString, 5_000, async (client) => {
     await client.query("SELECT 1");
     await assertLowPrivilegeRole(client);
+  });
+}
+
+// Run one SELECT against the source inside a READ ONLY transaction. Used by
+// live query mode. Three independent write-protections stack here:
+//   1. assertLowPrivilegeRole — refuses privileged roles at connect time
+//      (and users are told to provision a read-only role anyway);
+//   2. the transaction is READ ONLY — Postgres itself rejects any write;
+//   3. callers only ever build SELECTs from the closed query DSL.
+export async function readOnlyQuery(
+  connectionString: string,
+  timeoutMs: number,
+  sql: string,
+  params: unknown[]
+): Promise<Record<string, unknown>[]> {
+  return withClient(connectionString, timeoutMs, async (client) => {
+    await assertLowPrivilegeRole(client);
+    await client.query("BEGIN TRANSACTION READ ONLY");
+    try {
+      const result = await client.query(sql, params);
+      await client.query("COMMIT");
+      return result.rows;
+    } catch (e) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw e;
+    }
   });
 }
 

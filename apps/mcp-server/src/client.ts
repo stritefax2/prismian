@@ -177,6 +177,7 @@ export const api = {
           columns: string[];
           content_column?: string;
         } | null;
+        source_mode: "mirror" | "live" | null;
         sync_status: string | null;
         last_sync_at: string | null;
       }>;

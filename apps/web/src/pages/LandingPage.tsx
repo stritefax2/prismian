@@ -144,9 +144,9 @@ export function LandingPage() {
             className="inline-flex items-center gap-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-full mb-6 hover:border-gray-300 transition-colors"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            New: MCP relay — wrap any vendor MCP server
+            New: Live queries — agents read your Postgres in real time
             <span className="text-gray-300">·</span>
-            <span className="text-gray-500">Postgres connector in beta</span>
+            <span className="text-gray-500">nothing copied, nothing stale</span>
           </a>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold text-gray-900 tracking-tight leading-[1.05]">
             Give every AI tool
@@ -178,7 +178,7 @@ export function LandingPage() {
             </a>
           </div>
           <p className="mt-6 text-xs text-gray-500 font-mono">
-            read-only · encrypted at rest · agents never write to source
+            read-only · live data, nothing copied · agents never write to source
           </p>
         </div>
       </section>
@@ -232,13 +232,14 @@ export function LandingPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-white font-semibold text-sm">Acme Corp</span>
-                    <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">
-                      Supabase Prod · synced 2m ago
+                    <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full inline-flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Supabase Prod · live
                     </span>
                   </div>
                   <div className="flex gap-2">
                     <span className="text-xs bg-gray-800 text-gray-200 px-2.5 py-1 rounded-md font-medium border border-gray-700">
-                      Sync now
+                      Agent keys
                     </span>
                     <span className="text-xs bg-gray-900 text-gray-500 px-2.5 py-1 rounded-md border border-gray-800">
                       Settings
@@ -268,7 +269,7 @@ export function LandingPage() {
                         <p className="text-white text-sm font-medium">{c.name}</p>
                         {c.synced ? (
                           <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded font-mono border border-emerald-500/20">
-                            synced
+                            live
                           </span>
                         ) : (
                           <span className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded font-mono border border-gray-700">
@@ -637,9 +638,9 @@ export function LandingPage() {
                       2
                     </span>
                     <span>
-                      It queried your synced snapshot with a typed filter —
-                      not your prod DB. Denied columns never made it into
-                      the response.
+                      It ran a typed filter through Prismian — a read-only,
+                      column-scoped query, never raw SQL. Denied columns
+                      never made it into the response.
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -699,7 +700,8 @@ export function LandingPage() {
                   Paste a read-only Postgres connection string. Prismian
                   introspects the schema, you pick which tables to expose, and
                   pick which columns each table should share. Everything else
-                  stays invisible. Initial sync runs in seconds.
+                  stays invisible. Queryable the moment you connect — no copy,
+                  no wait.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {[
@@ -810,10 +812,10 @@ export function LandingPage() {
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
                   Your Cursor queries customers. Your Claude checks orders.
-                  ChatGPT searches products. All from the same live, synced,
-                  permissioned view. When a row changes in your source DB, the
-                  next sync (every 15 minutes, or manual) pushes it out to
-                  every agent.
+                  ChatGPT searches products. All through the same
+                  permissioned view. When a row changes in your source DB,
+                  every agent sees it on its next query — live collections
+                  read your database at request time.
                 </p>
               </div>
               <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
@@ -972,7 +974,7 @@ export function LandingPage() {
           <div className="mt-10 grid sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-xl border border-gray-100 p-4">
               <p className="text-xs font-semibold text-gray-900 mb-1">
-                One sync, many keys
+                One connection, many keys
               </p>
               <p className="text-xs text-gray-600 leading-relaxed">
                 One connection per source. Each agent gets its own scoped key.
@@ -1005,7 +1007,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Inside Prismian: the synced view ─── */}
+      {/* ─── Inside Prismian: the live view ─── */}
       <section className="py-20 sm:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
@@ -1025,19 +1027,22 @@ export function LandingPage() {
                 <span className="text-[10px] font-mono uppercase tracking-wider bg-white text-gray-700 px-2 py-0.5 rounded border border-gray-200 shrink-0">
                   read-only
                 </span>
+                <span className="text-[10px] font-mono uppercase tracking-wider bg-sky-50 text-sky-700 px-2 py-0.5 rounded border border-sky-200 shrink-0">
+                  live
+                </span>
                 <span className="text-gray-700 truncate">
-                  Synced from{" "}
+                  Live from{" "}
                   <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded text-xs font-mono">
                     public.customers
                   </code>
                   <span className="hidden sm:inline text-gray-500">
                     {" "}
-                    · last synced 2m ago · 4,823 rows
+                    · queried at request time · 4,823 rows
                   </span>
                 </span>
               </div>
               <button className="bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-md shrink-0 cursor-default hover:bg-gray-800">
-                Sync now
+                Agent keys
               </button>
             </div>
 
@@ -1165,12 +1170,12 @@ export function LandingPage() {
           <div className="mt-6 grid sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-xl border border-gray-100 p-4">
               <p className="text-xs font-semibold text-gray-900 mb-1">
-                Mirrored, not proxied
+                Live by default
               </p>
               <p className="text-xs text-gray-600 leading-relaxed">
-                We snapshot your selected columns into our DB on each sync.
-                Agent queries hit our snapshot, not your prod — zero query
-                load.
+                Agent queries run against your DB at request time — always
+                current, nothing copied. Prefer zero query load on prod?
+                Flip a collection to mirror mode.
               </p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-4">
@@ -1214,7 +1219,7 @@ export function LandingPage() {
             {[
               {
                 title: "Read-only by construction",
-                desc: "Agents cannot write to your source database. Ever. Connected collections reject all writes at the API layer — not just via permissions, but as a structural invariant.",
+                desc: "Agents cannot write to your source database. Ever. Live queries run inside Postgres READ ONLY transactions on a low-privilege role, and connected collections reject all writes at the API layer — structural invariants, not permissions.",
                 tag: "structural",
                 icon: (
                   <path
@@ -1226,7 +1231,7 @@ export function LandingPage() {
               },
               {
                 title: "Per-agent column redaction",
-                desc: "Your sales agent sees customers.email but not customers.credit_card_last4. Your CI bot sees orders.status but not orders.total_revenue. Configured per key, enforced before data leaves the API.",
+                desc: "Your sales agent sees customers.email but not customers.credit_card_last4. Configured per key. In live mode, denied columns are excluded from the SELECT itself — the data never even leaves your database.",
                 tag: "per-key",
                 icon: (
                   <>
@@ -1336,12 +1341,14 @@ export function LandingPage() {
               Where your data lives
             </h2>
             <p className="mt-3 text-gray-500 max-w-xl mx-auto leading-relaxed">
-              Database connectors mirror the columns you select into our
-              Postgres so agents can be permissioned, redacted, and audited
-              before data leaves the API. Relayed MCP servers are the
-              opposite: pure pass-through — we store the credential
-              (encrypted) and the audit log, never the responses. Here's
-              the full story.
+              By default, database collections are <strong>live</strong>:
+              agent queries run against your database at request time —
+              permissioned, redacted, and audited on the way through, with
+              no rows stored on our side. You can opt a collection into
+              mirror mode (a 15-minute synced copy) when you want semantic
+              search over a text column. Relayed MCP servers are always
+              pass-through — we store the credential (encrypted) and the
+              audit log, never the responses. Here's the full story.
             </p>
           </div>
 
@@ -1355,21 +1362,23 @@ export function LandingPage() {
 {`  YOUR SOURCE DB                      PRISMIAN                       AI TOOLS
   ──────────────                      ────────                       ────────
 
-  ┌─────────────┐                    ┌──────────────┐               ┌────────┐
-  │  Postgres   │  read-only,        │  Postgres    │  scoped,      │ Cursor │
-  │  (Supabase, │  selected cols     │  (mirror of  │  redacted,    │ Claude │
-  │   Neon,     │  ─────────────►    │  your cols)  │  audited      │ ChatGPT│
-  │   RDS, …)   │  every 15 min      │              │  ─────────►   │ etc.   │
+  ┌─────────────┐   LIVE (default)   ┌──────────────┐               ┌────────┐
+  │  Postgres   │  SELECT at request │  API gateway │  scoped,      │ Cursor │
+  │  (Supabase, │  time, READ ONLY   │  (permission │  redacted,    │ Claude │
+  │   Neon,     │  ◄────────────►    │  + redaction │  audited      │ ChatGPT│
+  │   RDS, …)   │  nothing stored    │  + audit)    │  ─────────►   │ etc.   │
   └─────────────┘                    └──────────────┘               └────────┘
-                                            ▲
-                                            │
+         │         MIRROR (opt-in)          ▲
+         └──────── selected cols ──────────►│  synced copy, every 15 min
+                                            │  (enables semantic search)
                                   ┌─────────┴─────────┐
                                   │  audit_log table  │  (every read,
                                   │                   │   every actor,
                                   │                   │   every row id)
                                   └───────────────────┘
 
-  Agents NEVER hit your source DB.
+  Live queries use a read-only role inside READ ONLY transactions —
+  only a closed filter DSL, never raw SQL from agents.
   Writes from agents go ONLY into native (non-source) collections.`}
             </pre>
           </div>
@@ -1389,8 +1398,12 @@ export function LandingPage() {
                   { ok: true, text: "Connection strings: AES-256-GCM at rest" },
                   { ok: true, text: "All transport: TLS 1.2+" },
                   {
+                    ok: true,
+                    text: "Live collections: no row data at rest, period",
+                  },
+                  {
                     ok: false,
-                    text: "Row data: Supabase disk encryption only — app-level layer on roadmap",
+                    text: "Mirrored rows: Supabase disk encryption only — app-level layer on roadmap",
                   },
                 ],
               },
@@ -1426,8 +1439,9 @@ export function LandingPage() {
                   />
                 ),
                 items: [
+                  { ok: true, text: "Live collections → nothing stored, nothing to delete" },
                   { ok: true, text: "Delete workspace → every entry, key, audit row cascades" },
-                  { ok: true, text: "Delete a collection → its synced rows go with it" },
+                  { ok: true, text: "Delete a mirror collection → its synced rows go with it" },
                   { ok: true, text: "Disconnect a source → cascades to every reader collection" },
                 ],
               },
@@ -1634,7 +1648,7 @@ export function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-500 font-bold">+</span>
-                  15-minute sync · MCP (stdio + SSE)
+                  Live queries + optional mirrors · MCP (stdio + SSE)
                 </li>
               </ul>
               <Link
@@ -1659,7 +1673,7 @@ export function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-gray-300 font-bold">+</span>
-                  1-minute sync · priority embedding queue
+                  Higher query rate limits · priority embedding queue
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-gray-300 font-bold">+</span>
@@ -1704,7 +1718,7 @@ export function LandingPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 pb-14 mb-12 border-b border-gray-800/80">
             {[
               { label: "MCP tools included", value: "8" },
-              { label: "Default sync interval", value: "15 min" },
+              { label: "Data freshness (live mode)", value: "realtime" },
               { label: "Agent writes to source DB", value: "0" },
               { label: "Time to first query", value: "~5 min" },
             ].map((stat) => (
@@ -1729,9 +1743,8 @@ export function LandingPage() {
             </h2>
             <p className="mt-6 text-lg text-gray-400 max-w-xl mx-auto">
               The AI-safe access layer for your team's data. Permissioned,
-              audited, column-redacted, live-synced. Every AI tool on your
-              team reading the same source of truth — each with its own
-              scope.
+              audited, column-redacted, live. Every AI tool on your team
+              reading the same source of truth — each with its own scope.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link

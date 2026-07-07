@@ -49,6 +49,7 @@ export function ConnectedCollectionSetup({
   const [primaryKey, setPrimaryKey] = useState<string>("");
   const [selectedCols, setSelectedCols] = useState<Set<string>>(new Set());
   const [contentCol, setContentCol] = useState<string>("");
+  const [mode, setMode] = useState<"live" | "mirror">("live");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -114,6 +115,7 @@ export function ConnectedCollectionSetup({
             name: collectionName,
             collection_type: "structured",
             source_id: dataSourceId,
+            source_mode: mode,
             source_config: {
               table: qualifiedTable,
               primary_key: primaryKey,
@@ -304,6 +306,51 @@ export function ConnectedCollectionSetup({
               </label>
 
               <div className="mb-4">
+                <span className="text-sm font-medium text-gray-700 block mb-2">
+                  Query mode
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode("live")}
+                    className={`text-left px-3 py-2.5 rounded-lg border transition-all ${
+                      mode === "live"
+                        ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+                      Live
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-medium">
+                        recommended
+                      </span>
+                    </span>
+                    <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                      Queries run against your database at request time.
+                      Always current; no rows stored in Prismian.
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("mirror")}
+                    className={`text-left px-3 py-2.5 rounded-lg border transition-all ${
+                      mode === "mirror"
+                        ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <span className="text-sm font-medium text-gray-900">
+                      Mirror
+                    </span>
+                    <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                      Rows sync into Prismian every 15 min. Enables semantic
+                      search; data is up to 15 min stale.
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">
                     Columns to expose ({selectedCols.size} of{" "}
@@ -361,7 +408,9 @@ export function ConnectedCollectionSetup({
 
               <label className="block mb-4">
                 <span className="text-sm font-medium text-gray-700">
-                  Content column for embeddings{" "}
+                  {mode === "mirror"
+                    ? "Content column for embeddings "
+                    : "Content column "}
                   <span className="text-gray-400 font-normal">(optional)</span>
                 </span>
                 <select
@@ -383,8 +432,9 @@ export function ConnectedCollectionSetup({
                     ))}
                 </select>
                 <span className="block mt-1 text-xs text-gray-500">
-                  If you pick one, semantic search queries will embed and
-                  search this column's text.
+                  {mode === "mirror"
+                    ? "If you pick one, semantic search queries will embed and search this column's text."
+                    : "Shown as the row's main text in results. Semantic (embedding) search isn't available in live mode — keyword and structured queries are."}
                 </span>
               </label>
 
@@ -413,7 +463,11 @@ export function ConnectedCollectionSetup({
                   }
                   className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
                 >
-                  {submitting ? "Creating..." : "Create & sync"}
+                  {submitting
+                    ? "Creating..."
+                    : mode === "live"
+                      ? "Create"
+                      : "Create & sync"}
                 </button>
               </div>
             </div>

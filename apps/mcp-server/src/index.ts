@@ -33,6 +33,8 @@ WHEN query_structured IS BETTER:
 - You want every row matching a known field value
 - You need sort/pagination/aggregation
 
+LIVE COLLECTIONS: workspace-wide search does NOT cover live collections (list_collections → live: true). To keyword-search one, pass its ID as 'collection' — the search then runs against the source database in real time.
+
 If search returns zero results, the response includes a 'diagnostic' object listing the collections in this workspace and suggesting the next tool. Read it before reporting "nothing found" — the data may exist but require query_structured, or use simpler keywords.
 
 Example queries:
@@ -173,7 +175,9 @@ server.tool(
   `List every collection in the workspace with enough schema info to pick the right tool. CALL THIS FIRST in any new conversation.
 
 Each collection is tagged with:
-  • synced: true  → mirrored from an external database, read-only, query with query_structured (or search if it has a content_column)
+  • synced: true  → connected to an external database, read-only. Comes in two modes (see live flag).
+  • live: true    → queries run against the source database at request time (always-current data). query_structured and aggregate work fully; search must be pinned to this collection (pass its ID) to keyword-search it. Workspace-wide search does NOT cover live collections.
+  • live: false + synced: true → a mirror refreshed every ~15 min; data can be slightly stale.
   • synced: false → native, writable, query with search (text) or query_structured (fields), write with write_entry
   • queryable_fields: the column names you can filter on via query_structured
   • content_column: the text column indexed for semantic search (may be absent — in that case search returns nothing from this collection)
@@ -187,6 +191,7 @@ Each collection is tagged with:
     // LLM deciding between search and query_structured.
     const enriched = collections.map((c) => {
       const synced = Boolean(c.source_id);
+      const live = c.source_mode === "live";
       const cols = c.source_config?.columns || [];
       const contentCol = c.source_config?.content_column;
       const searchable = Boolean(
@@ -197,6 +202,7 @@ Each collection is tagged with:
         name: c.name,
         type: c.collection_type,
         synced,
+        live,
         writable: !synced,
         source: synced ? c.source_config?.table ?? null : null,
         queryable_fields: cols,
@@ -204,24 +210,36 @@ Each collection is tagged with:
         content_column: contentCol ?? null,
         searchable_by_text: searchable,
         entry_count: c.entry_count,
-        ...(synced
+        ...(synced && !live
           ? {
               last_sync_at: c.last_sync_at,
               sync_status: c.sync_status,
             }
           : {}),
+        ...(live
+          ? {
+              freshness:
+                "realtime — every query runs against the source database",
+            }
+          : {}),
         recommended_tools:
           synced && cols.length > 0
-            ? contentCol
+            ? live
               ? [
-                  "query_structured (field filters)",
-                  "aggregate (count/sum/avg/group_by)",
-                  "search (prose in content_column)",
+                  "query_structured (field filters, live data)",
+                  "aggregate (count/sum/avg/group_by over the FULL source table)",
+                  "search with collection=<this id> (keyword search, live)",
                 ]
-              : [
-                  "query_structured (field filters)",
-                  "aggregate (count/sum/avg/group_by)",
-                ]
+              : contentCol
+                ? [
+                    "query_structured (field filters)",
+                    "aggregate (count/sum/avg/group_by)",
+                    "search (prose in content_column)",
+                  ]
+                : [
+                    "query_structured (field filters)",
+                    "aggregate (count/sum/avg/group_by)",
+                  ]
             : !synced
               ? [
                   "search (text)",
@@ -262,7 +280,7 @@ EXAMPLE — find at-risk enterprise customers:
   ]
   sort_by: "mrr"
 
-If the target collection is synced (see list_collections → synced: true), the underlying data came from an external database on the most recent sync; use read_entry to get per-row details including its source_row_id.`,
+If the target collection is synced (see list_collections → synced: true), the data comes from an external database — in real time when live: true, otherwise as of the most recent sync. Use read_entry to get per-row details including its source_row_id.`,
   {
     collection: z.string().describe("Collection ID to query"),
     filters: z
@@ -451,6 +469,7 @@ server.tool(
       name: c.name,
       type: c.collection_type,
       synced: Boolean(c.source_id),
+      live: c.source_mode === "live",
       writable: !c.source_id,
       source: c.source_id ? c.source_config?.table ?? null : null,
       queryable_fields: c.source_config?.columns ?? [],
@@ -485,7 +504,9 @@ server.prompt(
           type: "text",
           text: `You are connected to Prismian, the team's safe access layer for their data. Two categories of collection exist:
 
-  1. SYNCED (read-only): mirrors of tables from an external database (Postgres, Supabase, etc.). Examples: customers, orders, products. Query with query_structured. Never try to write — writes return 409 read_only_source. To change data, the user has to update it in the source DB.
+  1. CONNECTED (read-only): tables from an external database (Postgres, Supabase, etc.). Examples: customers, orders, products. Query with query_structured. Never try to write — writes return 409 read_only_source. To change data, the user has to update it in the source DB. Two sub-modes:
+     - live: true — queries run against the source database at request time. Data is always current; aggregates cover the full table. Workspace-wide search skips these; pin search with the collection ID instead.
+     - live: false — a mirror refreshed every ~15 min; may be slightly stale.
 
   2. NATIVE (writable): team-written entries — Decisions, Meeting Notes, Insights, Agent Observations. Query with search (for prose) or query_structured (for typed fields). Write with write_entry / update_entry / store_document.
 

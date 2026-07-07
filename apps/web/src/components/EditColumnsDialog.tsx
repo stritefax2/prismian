@@ -25,6 +25,7 @@ interface CollectionResponse {
     columns: string[];
     content_column?: string;
   } | null;
+  source_mode: "mirror" | "live" | null;
   sync_status: "idle" | "syncing" | "error" | null;
   last_sync_at: string | null;
   last_sync_error: string | null;

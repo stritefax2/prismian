@@ -34,6 +34,11 @@ export interface SourceConfig {
   content_column?: string;
 }
 
+// mirror: rows synced into Prismian every 15 min (searchable copy at rest).
+// live: queries hit the source database at request time; no rows stored.
+// null: native collection (not connected to a source).
+export type SourceMode = "mirror" | "live";
+
 export interface Collection {
   id: string;
   workspace_id: string;
@@ -43,6 +48,7 @@ export interface Collection {
   created_at: string;
   source_id: string | null;
   source_config: SourceConfig | null;
+  source_mode: SourceMode | null;
   sync_status: SyncStatus | null;
   last_sync_at: string | null;
   last_sync_error: string | null;

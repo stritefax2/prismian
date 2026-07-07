@@ -15,8 +15,41 @@ import {
   getAccessibleCollectionIds,
   filterDeniedFields,
 } from "../services/permissions.js";
-import type { AgentPermissions } from "../shared/index.js";
+import type { AgentPermissions, SourceConfig } from "../shared/index.js";
 import { logAction } from "../services/audit.js";
+import { loadConnectionString } from "../services/connectors/sync.js";
+import {
+  allowedColumnsFor,
+  buildStructuredSql,
+  buildCountSql,
+  buildAggregateSql,
+  buildFullTextSql,
+  runLiveSql,
+  shapeLiveRow,
+  LiveQueryError,
+  type DslFilter,
+} from "../services/connectors/live-query.js";
+
+interface LiveTarget {
+  collectionId: string;
+  workspaceId: string;
+  collectionName: string;
+  config: SourceConfig;
+  sourceId: string;
+}
+
+// Shared plumbing for the live branches below: resolve credentials, run,
+// and translate failures into HTTP-shaped errors.
+async function runLive(
+  target: LiveTarget,
+  built: { sql: string; params: unknown[] }
+): Promise<Record<string, unknown>[]> {
+  const connectionString = await loadConnectionString(target.sourceId);
+  if (!connectionString) {
+    throw new LiveQueryError("Data source credentials missing", 400);
+  }
+  return runLiveSql(connectionString, built);
+}
 
 export const searchRoutes = new Hono<AppEnv>();
 
@@ -73,6 +106,82 @@ searchRoutes.post("/", async (c) => {
         { error: "Read access denied to this collection" },
         403
       );
+    }
+  }
+
+  // A search pinned to a live collection runs keyword search against the
+  // source database at request time. (Workspace-wide search only covers
+  // native + mirrored collections — fanning out to N customer databases
+  // per search is not something we do; the diagnostic below points agents
+  // at live collections explicitly.)
+  if (collection) {
+    const liveLookup = await query<{
+      name: string;
+      workspace_id: string;
+      source_id: string | null;
+      source_config: SourceConfig | null;
+      source_mode: string | null;
+    }>(
+      "SELECT name, workspace_id, source_id, source_config, source_mode FROM collections WHERE id = $1 AND workspace_id = $2",
+      [collection, workspaceId]
+    );
+    const lr = liveLookup.rows[0];
+    if (lr && lr.source_mode === "live" && lr.source_id && lr.source_config) {
+      const deniedFields = new Set(
+        permissions?.field_restrictions?.[lr.name]?.deny_fields ?? []
+      );
+      const allowed = allowedColumnsFor(lr.source_config, deniedFields);
+      try {
+        const built = buildFullTextSql(lr.source_config, allowed, {
+          query: searchQuery,
+          limit: effectiveLimit,
+        });
+        const connectionString = await loadConnectionString(lr.source_id);
+        if (!connectionString) {
+          return c.json({ error: "Data source credentials missing" }, 502);
+        }
+        const rows = await runLiveSql(connectionString, built);
+        const results = rows.map((row) => {
+          const { __relevance, ...rest } = row;
+          const shaped = shapeLiveRow(
+            rest,
+            {
+              id: collection,
+              workspace_id: workspaceId,
+              source_config: lr.source_config!,
+            },
+            allowed
+          );
+          return {
+            entry_id: shaped.id,
+            collection_id: collection,
+            collection: lr.name,
+            content: shaped.content,
+            structured_data: shaped.structured_data,
+            relevance_score: __relevance,
+            live: true,
+          };
+        });
+        if (auth.agentKeyId) {
+          logAction(auth, workspaceId, "search", "entries", undefined, {
+            query: searchQuery.slice(0, 200),
+            returned: results.length,
+            collection,
+            live: true,
+          });
+        }
+        return c.json({ results });
+      } catch (e) {
+        if (e instanceof LiveQueryError) {
+          return c.json({ error: e.message }, e.status);
+        }
+        return c.json(
+          {
+            error: `Live query against source failed: ${e instanceof Error ? e.message : String(e)}`,
+          },
+          502
+        );
+      }
     }
   }
 
@@ -180,9 +289,10 @@ async function buildEmptyDiagnostic(args: {
     name: string;
     source_id: string | null;
     source_config: { columns?: string[]; content_column?: string } | null;
+    source_mode: string | null;
     entry_count: number;
   }>(
-    `SELECT c.id, c.name, c.source_id, c.source_config,
+    `SELECT c.id, c.name, c.source_id, c.source_config, c.source_mode,
             (SELECT COUNT(*)::int FROM entries WHERE collection_id = c.id) AS entry_count
      FROM collections c
      ${where}`,
@@ -191,12 +301,14 @@ async function buildEmptyDiagnostic(args: {
 
   const collections = colInfo.rows.map((r) => {
     const synced = Boolean(r.source_id);
+    const live = r.source_mode === "live";
     const contentCol = r.source_config?.content_column ?? null;
     const queryableFields = r.source_config?.columns ?? [];
     return {
       id: r.id,
       name: r.name,
       synced,
+      live,
       writable: !synced,
       content_column: contentCol,
       queryable_fields: queryableFields,
@@ -204,6 +316,9 @@ async function buildEmptyDiagnostic(args: {
     };
   });
 
+  // Live collections have zero local entries by design — their rows live
+  // in the source database. Don't let them trip the "no entries" branch.
+  const liveCollections = collections.filter((c) => c.live);
   const withEntries = collections.filter((c) => c.entry_count > 0);
   const totalEntries = collections.reduce((s, c) => s + c.entry_count, 0);
 
@@ -211,6 +326,14 @@ async function buildEmptyDiagnostic(args: {
   if (collections.length === 0) {
     suggestion =
       "No accessible collections in this workspace. Ask an admin for read access, or check that you're querying the right workspace.";
+  } else if (liveCollections.length > 0 && totalEntries === 0) {
+    const names = liveCollections
+      .map(
+        (c) =>
+          `${c.name} (${c.queryable_fields.slice(0, 5).join(", ")}${c.queryable_fields.length > 5 ? ", …" : ""})`
+      )
+      .join("; ");
+    suggestion = `This workspace has live collections that are queried directly from the source database — workspace-wide search doesn't cover them. Use query_structured or aggregate on: ${names}. Or pass collection=<id> to search to keyword-search one live collection.`;
   } else if (totalEntries === 0) {
     suggestion =
       "Collections exist but have no entries yet. Use store_document or write_entry to add content.";
@@ -225,6 +348,9 @@ async function buildEmptyDiagnostic(args: {
     suggestion = fieldHints
       ? `Keyword search matched no entries. For exact-field matches try query_structured on: ${fieldHints}. Or rephrase with terms likely to appear verbatim.`
       : "Keyword search matched no entries. Try simpler/fewer keywords, or use query_structured if you know the field shape.";
+    if (liveCollections.length > 0) {
+      suggestion += ` Note: live collections (${liveCollections.map((c) => c.name).join(", ")}) are not covered by workspace-wide search — query them with query_structured/aggregate, or pin search with collection=<id>.`;
+    }
   } else {
     suggestion =
       "Your query matched no entries. Rephrase with simpler keywords, or check list_collections to see what's stored.";
@@ -260,8 +386,11 @@ searchRoutes.post("/structured", async (c) => {
   const colLookup = await query<{
     workspace_id: string;
     name: string;
+    source_id: string | null;
+    source_config: SourceConfig | null;
+    source_mode: string | null;
   }>(
-    "SELECT workspace_id, name FROM collections WHERE id = $1",
+    "SELECT workspace_id, name, source_id, source_config, source_mode FROM collections WHERE id = $1",
     [collection]
   );
   if (colLookup.rows.length === 0) {
@@ -296,6 +425,73 @@ searchRoutes.post("/structured", async (c) => {
   const effectiveLimit = permissions
     ? Math.min(limit, getMaxResults(permissions))
     : limit;
+
+  // Live collections: translate the same DSL into a SELECT against the
+  // source database, executed now, inside a READ ONLY transaction. Denied
+  // columns are excluded from the projection, and filters/sorts referencing
+  // them fail loudly (they'd leak by inference otherwise).
+  const liveRow = colLookup.rows[0];
+  if (liveRow.source_mode === "live" && liveRow.source_id && liveRow.source_config) {
+    const target: LiveTarget = {
+      collectionId: collection,
+      workspaceId: targetWorkspace,
+      collectionName,
+      config: liveRow.source_config,
+      sourceId: liveRow.source_id,
+    };
+    const deniedFields = new Set(
+      permissions?.field_restrictions?.[collectionName]?.deny_fields ?? []
+    );
+    const allowed = allowedColumnsFor(target.config, deniedFields);
+    try {
+      const built = buildStructuredSql(target.config, allowed, deniedFields, {
+        filters: filters as DslFilter[],
+        sort_by,
+        limit: effectiveLimit,
+      });
+      const [rows, countRows] = await Promise.all([
+        runLive(target, built),
+        runLive(
+          target,
+          buildCountSql(target.config, allowed, deniedFields, [])
+        ),
+      ]);
+      const results = rows.map((row) =>
+        shapeLiveRow(
+          row,
+          {
+            id: collection,
+            workspace_id: targetWorkspace,
+            source_config: target.config,
+          },
+          allowed
+        )
+      );
+      if (auth.agentKeyId) {
+        logAction(auth, targetWorkspace, "query_structured", "entries", collection, {
+          collection: collectionName,
+          filters: filters?.length || 0,
+          returned: results.length,
+          live: true,
+        });
+      }
+      return c.json({
+        results,
+        total: (countRows[0]?.total as number) ?? results.length,
+        live: true,
+      });
+    } catch (e) {
+      if (e instanceof LiveQueryError) {
+        return c.json({ error: e.message }, e.status);
+      }
+      return c.json(
+        {
+          error: `Live query against source failed: ${e instanceof Error ? e.message : String(e)}`,
+        },
+        502
+      );
+    }
+  }
 
   let sql = `
     SELECT id, collection_id, workspace_id, structured_data, content,
@@ -429,9 +625,11 @@ searchRoutes.post("/aggregate", async (c) => {
   const colInfo = await query<{
     workspace_id: string;
     name: string;
-    source_config: { columns?: string[] } | null;
+    source_id: string | null;
+    source_config: SourceConfig | null;
+    source_mode: string | null;
   }>(
-    "SELECT workspace_id, name, source_config FROM collections WHERE id = $1",
+    "SELECT workspace_id, name, source_id, source_config, source_mode FROM collections WHERE id = $1",
     [collection]
   );
   if (colInfo.rows.length === 0) {
@@ -495,6 +693,52 @@ searchRoutes.post("/aggregate", async (c) => {
           available_fields: knownColumns,
         },
         400
+      );
+    }
+  }
+
+  // Live collections: run the aggregate on the source database directly —
+  // and against ALL rows in the source table, not a 10k-row mirror cap,
+  // so SUM/COUNT answers are exact and current.
+  const aggRow = colInfo.rows[0];
+  if (aggRow.source_mode === "live" && aggRow.source_id && aggRow.source_config) {
+    const target: LiveTarget = {
+      collectionId: collection,
+      workspaceId: targetWorkspace,
+      collectionName,
+      config: aggRow.source_config,
+      sourceId: aggRow.source_id,
+    };
+    const allowed = allowedColumnsFor(target.config, deniedFields);
+    try {
+      const built = buildAggregateSql(target.config, allowed, deniedFields, {
+        group_by,
+        aggregations,
+        filters: filters as DslFilter[] | undefined,
+        having,
+        order_by,
+        limit,
+      });
+      const rows = await runLive(target, built);
+      if (auth.agentKeyId) {
+        logAction(auth, targetWorkspace, "aggregate", "entries", collection, {
+          collection: collectionName,
+          aggregations: aggregations?.length || 0,
+          groups: group_by?.length || 0,
+          returned: rows.length,
+          live: true,
+        });
+      }
+      return c.json({ results: rows, live: true });
+    } catch (e) {
+      if (e instanceof LiveQueryError) {
+        return c.json({ error: e.message }, e.status);
+      }
+      return c.json(
+        {
+          error: `Live query against source failed: ${e instanceof Error ? e.message : String(e)}`,
+        },
+        502
       );
     }
   }

@@ -49,9 +49,13 @@ export type SyncOutcome =
     }
   | {
       status: "not_connected";
+    }
+  | {
+      // Live collections never sync — queries hit the source directly.
+      status: "live_mode";
     };
 
-async function loadConnectionString(
+export async function loadConnectionString(
   dataSourceId: string
 ): Promise<string | null> {
   const res = await query<{ encrypted_config: string }>(
@@ -106,8 +110,9 @@ export async function runSyncNow(collectionId: string): Promise<SyncOutcome> {
     workspace_id: string;
     source_id: string | null;
     source_config: SourceConfig | null;
+    source_mode: string | null;
   }>(
-    "SELECT id, workspace_id, source_id, source_config FROM collections WHERE id = $1",
+    "SELECT id, workspace_id, source_id, source_config, source_mode FROM collections WHERE id = $1",
     [collectionId]
   );
   if (colRes.rows.length === 0) {
@@ -116,6 +121,9 @@ export async function runSyncNow(collectionId: string): Promise<SyncOutcome> {
   const col = colRes.rows[0];
   if (!col.source_id || !col.source_config) {
     return { status: "not_connected" };
+  }
+  if (col.source_mode === "live") {
+    return { status: "live_mode" };
   }
 
   const claimed = await claim(collectionId);
@@ -231,6 +239,7 @@ async function tick(): Promise<void> {
   const due = await query<{ id: string }>(
     `SELECT id FROM collections
      WHERE source_id IS NOT NULL
+       AND source_mode IS DISTINCT FROM 'live'
        AND (sync_status IS NULL OR sync_status <> 'syncing')
        AND (last_sync_at IS NULL OR last_sync_at < now() - $1::interval)
      ORDER BY last_sync_at NULLS FIRST
@@ -286,6 +295,7 @@ export async function runSchedulerTick(): Promise<{
   const due = await query<{ id: string }>(
     `SELECT id FROM collections
      WHERE source_id IS NOT NULL
+       AND source_mode IS DISTINCT FROM 'live'
        AND (sync_status IS NULL OR sync_status <> 'syncing')
        AND (last_sync_at IS NULL OR last_sync_at < now() - $1::interval)
      ORDER BY last_sync_at NULLS FIRST

@@ -5,7 +5,18 @@ import { requireWorkspaceScope } from "../middleware/workspace-scope.js";
 import { createCollectionSchema } from "../shared/index.js";
 import type { AgentPermissions } from "../shared/index.js";
 import type { AppEnv } from "../types.js";
-import { runSyncNow } from "../services/connectors/sync.js";
+import {
+  runSyncNow,
+  loadConnectionString,
+} from "../services/connectors/sync.js";
+import {
+  allowedColumnsFor,
+  buildBrowseSql,
+  buildStructuredSql,
+  runLiveSql,
+  shapeLiveRow,
+  LiveQueryError,
+} from "../services/connectors/live-query.js";
 import {
   canAccessCollection,
   filterDeniedFields,
@@ -22,8 +33,8 @@ collectionRoutes.use(
 
 const COLLECTION_COLUMNS = `c.id, c.workspace_id, c.name, c.collection_type,
                             c.schema, c.source_id, c.source_config,
-                            c.sync_status, c.last_sync_at, c.last_sync_error,
-                            c.created_at`;
+                            c.source_mode, c.sync_status, c.last_sync_at,
+                            c.last_sync_error, c.created_at`;
 
 collectionRoutes.get("/", async (c) => {
   const workspaceId = c.req.query("workspace_id");
@@ -97,10 +108,17 @@ collectionRoutes.post("/", async (c) => {
     }
   }
 
+  // Connected collections default to live mode (query at request time, no
+  // copy at rest) — mirror is the opt-in for teams that want a local
+  // searchable copy.
+  const sourceMode = parsed.data.source_id
+    ? (parsed.data.source_mode ?? "live")
+    : null;
+
   const result = await query(
     `INSERT INTO collections
-       (workspace_id, name, collection_type, schema, source_id, source_config, sync_status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (workspace_id, name, collection_type, schema, source_id, source_config, source_mode, sync_status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING ${COLLECTION_COLUMNS.replace(/c\./g, "")}`,
     [
       workspaceId,
@@ -109,11 +127,44 @@ collectionRoutes.post("/", async (c) => {
       parsed.data.schema || null,
       parsed.data.source_id || null,
       parsed.data.source_config || null,
-      parsed.data.source_id ? "idle" : null,
+      sourceMode,
+      parsed.data.source_id && sourceMode === "mirror" ? "idle" : null,
     ]
   );
 
   const collection = result.rows[0];
+
+  // Live collections never sync. Instead, probe the source with a one-row
+  // live query so misconfiguration (bad table/column names, unreachable DB,
+  // privileged role) surfaces at creation time rather than on the agent's
+  // first query.
+  if (collection.source_id && sourceMode === "live") {
+    try {
+      const connectionString = await loadConnectionString(collection.source_id);
+      if (!connectionString) {
+        throw new Error("Data source credentials missing");
+      }
+      const probe = buildStructuredSql(
+        collection.source_config,
+        collection.source_config.columns,
+        new Set(),
+        { filters: [], limit: 1 }
+      );
+      await runLiveSql(connectionString, probe);
+      return c.json({ collection, live_probe: { status: "ok" } }, 201);
+    } catch (e) {
+      return c.json(
+        {
+          collection,
+          live_probe: {
+            status: "error",
+            error: e instanceof Error ? e.message : "Live probe failed",
+          },
+        },
+        201
+      );
+    }
+  }
 
   // Run the initial sync inline. On serverless (Vercel), fire-and-forget
   // promises after the response are killed by the runtime — claim() flips
@@ -207,17 +258,85 @@ collectionRoutes.get("/:id/entries", async (c) => {
   const auth = c.get("auth");
   const permissions = auth.permissions as AgentPermissions | undefined;
 
-  const collectionResult = await query<{ name: string }>(
-    "SELECT name FROM collections WHERE id = $1",
+  const collectionResult = await query<{
+    name: string;
+    workspace_id: string;
+    source_id: string | null;
+    source_config: any;
+    source_mode: string | null;
+  }>(
+    "SELECT name, workspace_id, source_id, source_config, source_mode FROM collections WHERE id = $1",
     [collectionId]
   );
   if (collectionResult.rows.length === 0) {
     return c.json({ error: "Collection not found" }, 404);
   }
-  const collectionName = collectionResult.rows[0].name;
+  const collectionRow = collectionResult.rows[0];
+  const collectionName = collectionRow.name;
 
   if (permissions && !canAccessCollection(permissions, collectionName, "read")) {
     return c.json({ error: "Access denied to this collection" }, 403);
+  }
+
+  // Live collections: translate the browse into a SELECT against the
+  // source. Redaction happens by projection — denied columns are never
+  // part of the SELECT list.
+  if (
+    collectionRow.source_mode === "live" &&
+    collectionRow.source_id &&
+    collectionRow.source_config
+  ) {
+    const deniedFields = new Set(
+      permissions?.field_restrictions?.[collectionName]?.deny_fields ?? []
+    );
+    const allowed = allowedColumnsFor(collectionRow.source_config, deniedFields);
+    try {
+      const connectionString = await loadConnectionString(collectionRow.source_id);
+      if (!connectionString) {
+        return c.json({ error: "Data source credentials missing" }, 502);
+      }
+      const built = buildBrowseSql(collectionRow.source_config, allowed, deniedFields, {
+        q: q || undefined,
+        sort_by: sortByRaw,
+        sort_dir: sortDir === "ASC" ? "asc" : "desc",
+        limit,
+        offset,
+      });
+      const [rows, countRows] = await Promise.all([
+        runLiveSql(connectionString, built.list),
+        runLiveSql(connectionString, built.count),
+      ]);
+      const entries = rows.map((row) =>
+        shapeLiveRow(row, {
+          id: collectionId,
+          workspace_id: collectionRow.workspace_id,
+          source_config: collectionRow.source_config,
+        }, allowed)
+      );
+      if (auth.agentKeyId) {
+        logAction(auth, collectionRow.workspace_id, "read", "entries", collectionId, {
+          collection: collectionName,
+          returned: entries.length,
+          q: q || undefined,
+          live: true,
+        });
+      }
+      return c.json({
+        entries,
+        total: (countRows[0]?.total as number) ?? entries.length,
+        live: true,
+      });
+    } catch (e) {
+      if (e instanceof LiveQueryError) {
+        return c.json({ error: e.message }, e.status);
+      }
+      return c.json(
+        {
+          error: `Live query against source failed: ${e instanceof Error ? e.message : String(e)}`,
+        },
+        502
+      );
+    }
   }
 
   // Build dynamic WHERE / ORDER clauses. Field names are validated against

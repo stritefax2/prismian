@@ -44,6 +44,7 @@ See DEPLOY.md for production deployment steps.
 - All mutations logged to `audit_log` table
 - JSONB field names validated against `/^[a-zA-Z_][a-zA-Z0-9_]*$/` to prevent SQL injection
 - RLS policies provide defense-in-depth at the Postgres level
+- Connected collections have two modes (`collections.source_mode`): `live` (default — queries translated to `SELECT`s and run on the source DB at request time inside `READ ONLY` transactions; nothing stored; redaction by projection; live row ids look like `live_<collectionId>_<sourceRowId>`) and `mirror` (rows synced every 15 min into `entries`; enables embeddings). Live query builders: `apps/api/src/services/connectors/live-query.ts`. Sync scheduler skips `source_mode = 'live'`.
 
 ## API Routes
 

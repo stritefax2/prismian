@@ -18,6 +18,7 @@ interface Collection {
   collection_type: string;
   entry_count: number;
   source_id: string | null;
+  source_mode: "mirror" | "live" | null;
   sync_status: "idle" | "syncing" | "error" | null;
   last_sync_at: string | null;
 }
@@ -572,6 +573,7 @@ function CollectionCard({
   col: Collection;
 }) {
   const isSynced = Boolean(col.source_id);
+  const isLive = col.source_mode === "live";
   return (
     <Link
       to={`/w/${workspaceId}/c/${col.id}`}
@@ -580,8 +582,14 @@ function CollectionCard({
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-medium text-gray-900 truncate">{col.name}</h3>
         {isSynced && (
-          <span className="text-[10px] font-mono uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded shrink-0">
-            synced
+          <span
+            className={`text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 border ${
+              isLive
+                ? "bg-sky-50 text-sky-700 border-sky-200"
+                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+            }`}
+          >
+            {isLive ? "live" : "synced"}
           </span>
         )}
       </div>
@@ -591,10 +599,12 @@ function CollectionCard({
             read-only
           </span>
         )}
-        <span className="text-xs text-gray-400">
-          {col.entry_count} {isSynced ? "rows" : "entries"}
-        </span>
-        {col.sync_status === "error" && (
+        {!isLive && (
+          <span className="text-xs text-gray-400">
+            {col.entry_count} {isSynced ? "rows" : "entries"}
+          </span>
+        )}
+        {!isLive && col.sync_status === "error" && (
           <span className="text-xs text-red-600 font-medium">
             sync error
           </span>
